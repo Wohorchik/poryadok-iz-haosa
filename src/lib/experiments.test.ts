@@ -47,7 +47,8 @@ describe('скрытая картинка', () => {
     for (let index = 0; index < 1000; index += 1) {
       state = applyAttempt(state, randomIndex(CELL_COUNT));
       expect(state.openedCount + state.repeats).toBe(state.attempts);
-      expect(state.opened.filter(Boolean).length).toBe(state.openedCount);
+      expect(state.hits.filter((hits) => hits > 0).length).toBe(state.openedCount);
+      expect(state.hits.reduce((sum, hits) => sum + hits, 0)).toBe(state.attempts);
     }
   });
 

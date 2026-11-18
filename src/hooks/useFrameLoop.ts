@@ -15,7 +15,8 @@ export function useFrameLoop(running: boolean, onFrame: (elapsedMs: number) => v
     let frameId = 0;
     let previous = performance.now();
     const tick = (now: number) => {
-      const elapsed = Math.min(now - previous, MAX_FRAME_MS);
+      // Метка кадра rAF может оказаться раньше performance.now() из эффекта, поэтому отсекаем отрицательное время.
+      const elapsed = Math.min(Math.max(0, now - previous), MAX_FRAME_MS);
       previous = now;
       callback.current(elapsed);
       frameId = requestAnimationFrame(tick);

@@ -1,427 +1,430 @@
-import { useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { BarChart, LineChart, RangeField, RunControls, Segmented } from '../components/Charts';
+import { BoardWithBalls, boardGeometry, useGaltonFlights, type LaunchOptions } from '../components/GaltonBoardView';
 import { Readouts } from '../components/Readouts';
-import { Reveal } from '../components/Reveal';
-import { useFrameLoop } from '../hooks/useFrameLoop';
-import { formatInteger, formatOneDecimal, plural } from '../lib/format';
+import { StatsTable } from '../components/StatsTable';
+import { runningMeans, thin } from '../lib/chart';
 import {
-  BIN_COUNT,
+  NO_DATA,
+  equalsSign,
+  formatInteger,
+  formatOneDecimal,
+  formatShare,
+  formatStatistic,
+  formatSummary,
+  plural,
+} from '../lib/format';
+import {
   LEVELS,
+  MAX_LEVELS,
+  MIN_LEVELS,
   binOfPath,
   binomialCoefficient,
   binomialDistribution,
-  chartMaximum,
-  parsePercent,
+  binomialMean,
+  binomialVariance,
   simulatePath,
 } from '../lib/galton';
-
-const BOARD_WIDTH = 900;
-const BOARD_HEIGHT = 400;
-const COLUMN_WIDTH = BOARD_WIDTH / BIN_COUNT;
-const FIRST_ROW_Y = 44;
-const ROW_GAP = 36;
-const BIN_TOP = FIRST_ROW_Y + LEVELS * ROW_GAP;
-const BALL_LIFT = 13;
-const HOP_MS = 220;
-
-const BINS = Array.from({ length: BIN_COUNT }, (_, bin) => bin);
-const PATH_COUNTS = BINS.map((bin) => binomialCoefficient(LEVELS, bin));
-const emptyCounts = () => Array<number>(BIN_COUNT).fill(0);
-
-interface Point {
-  x: number;
-  y: number;
-}
-
-const pegX = (level: number, rights: number) => BOARD_WIDTH / 2 + (rights - level / 2) * COLUMN_WIDTH;
-const pegY = (level: number) => FIRST_ROW_Y + level * ROW_GAP;
-
-/** Опорные точки пути: вход, все уровни и дно ячейки. */
-function buildWaypoints(path: readonly boolean[]): Point[] {
-  const points: Point[] = [{ x: BOARD_WIDTH / 2, y: 4 }];
-  let rights = 0;
-  for (let level = 0; level <= LEVELS; level += 1) {
-    points.push({ x: pegX(level, rights), y: pegY(level) - BALL_LIFT });
-    if (level < LEVELS && path[level]) rights += 1;
-  }
-  points.push({ x: pegX(LEVELS, rights), y: BOARD_HEIGHT - 14 });
-  return points;
-}
-
-function ballPosition(points: readonly Point[], elapsed: number): { ball: Point; passed: number } {
-  const progress = Math.min(elapsed / HOP_MS, points.length - 1);
-  const index = Math.min(Math.floor(progress), points.length - 2);
-  const fraction = progress - index;
-  const from = points[index];
-  const to = points[index + 1];
-  return {
-    ball: {
-      x: from.x + (to.x - from.x) * fraction,
-      y: from.y + (to.y - from.y) * fraction ** 1.6 - Math.sin(Math.PI * fraction) * 8,
-    },
-    passed: index,
-  };
-}
-
-interface Flight {
-  path: boolean[];
-  points: Point[];
-  elapsed: number;
-}
+import { createRng, newSeed } from '../lib/random';
+import { summarizeCounts } from '../lib/statistics';
 
 const pathLetters = (path: readonly boolean[]) => path.map((isRight) => (isRight ? 'П' : 'Л')).join('');
 
-function Board({ flight, lastPath }: { flight: Flight | null; lastPath: boolean[] | null }) {
-  const trailPath = flight?.path ?? lastPath;
-  const points = trailPath ? (flight?.points ?? buildWaypoints(trailPath)) : null;
-  const position = flight ? ballPosition(flight.points, flight.elapsed) : null;
-  const visible = points
-    ? position
-      ? [...points.slice(0, position.passed + 1), position.ball]
-      : points
-    : [];
+const BATCHES = [
+  { size: 1, label: '1 шарик' },
+  { size: 10, label: '10 шариков' },
+  { size: 100, label: '100 шариков' },
+  { size: 1000, label: '1000 шариков' },
+] as const;
 
-  return (
-    <svg className="board" viewBox={`0 0 ${BOARD_WIDTH} ${BOARD_HEIGHT}`} role="img" aria-label="Доска Гальтона: 8 уровней штырьков и 9 ячеек">
-      {Array.from({ length: LEVELS }, (_, level) =>
-        Array.from({ length: level + 1 }, (_, peg) => (
-          <circle className="peg" key={`${level}-${peg}`} cx={pegX(level, peg)} cy={pegY(level)} r="6" />
-        )),
-      )}
-      {Array.from({ length: BIN_COUNT + 1 }, (_, wall) => (
-        <line
-          className="bin-wall"
-          key={wall}
-          x1={wall * COLUMN_WIDTH}
-          x2={wall * COLUMN_WIDTH}
-          y1={BIN_TOP - 8}
-          y2={BOARD_HEIGHT}
-        />
-      ))}
-      {visible.length > 1 ? (
-        <polyline className="ball-trail" points={visible.map((point) => `${point.x},${point.y}`).join(' ')} />
-      ) : null}
-      {position ? <circle className="ball" data-testid="galton-ball" cx={position.ball.x} cy={position.ball.y} r="11" /> : null}
-    </svg>
-  );
+/** Скорость влияет только на анимацию: пути шариков уже определены в момент запуска. */
+function launchOptions(size: number, fast: boolean): LaunchOptions {
+  if (size === 1) return { releaseMs: 0, hopMs: fast ? 90 : 220 };
+  if (fast) return { releaseMs: Math.min(600, size * 4), hopMs: 45, visibleLimit: 60 };
+  return { releaseMs: size <= 10 ? 700 : size <= 100 ? 1200 : 2500, hopMs: 170 };
 }
 
-function Histogram({ shares, theory }: { shares: readonly number[]; theory: readonly number[] }) {
-  const maximum = chartMaximum([...shares, ...theory]);
-  const tickStep = maximum <= 10 ? 5 : maximum <= 40 ? 10 : 20;
-  const ticks = Array.from({ length: Math.floor(maximum / tickStep) + 1 }, (_, index) => index * tickStep);
-
-  return (
-    <div className="chart" role="img" aria-label="Гистограмма долей шариков и теоретическое биномиальное распределение">
-      <div className="chart-axis" aria-hidden="true">
-        {ticks.map((tick) => (
-          <span key={tick} style={{ bottom: `${(tick / maximum) * 100}%` }}>
-            {tick}&nbsp;%
-          </span>
-        ))}
-      </div>
-      <div className="chart-plot" aria-hidden="true">
-        {ticks.map((tick) => (
-          <span className="chart-line" key={tick} style={{ bottom: `${(tick / maximum) * 100}%` }} />
-        ))}
-        {BINS.map((bin) => {
-          const theoryHeight = (theory[bin] * 100 * 100) / maximum;
-          return (
-            <div className="chart-column" key={bin}>
-              <span className="chart-bar" data-testid={`galton-bar-${bin}`} style={{ height: `${(shares[bin] * 100 * 100) / maximum}%` }} />
-              <span className="chart-theory" style={{ bottom: `${theoryHeight}%` }}>
-                <span className="chart-theory-label">{formatOneDecimal(theory[bin] * 100)}</span>
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+/** Снимок выборки для сравнения. */
+interface SavedSample {
+  id: number;
+  levels: number;
+  percent: number;
+  size: number;
+  mean: number | null;
+  standardDeviation: number | null;
 }
 
-export function GaltonBoard({ active }: { active: boolean }) {
-  const [appliedPercent, setAppliedPercent] = useState(50);
-  const [draftPercent, setDraftPercent] = useState('50');
-  const [counts, setCounts] = useState<number[]>(emptyCounts);
-  const [flight, setFlight] = useState<Flight | null>(null);
+export interface GaltonReplay {
+  id: number;
+  path: boolean[];
+}
+
+export function GaltonBoard({ active, replay }: { active: boolean; replay?: GaltonReplay | null }) {
+  const [levels, setLevels] = useState(LEVELS);
+  const [percent, setPercent] = useState(50);
+  const [seed, setSeed] = useState(newSeed);
+  const [counts, setCounts] = useState<number[]>(() => Array(LEVELS + 1).fill(0));
   const [lastPath, setLastPath] = useState<boolean[] | null>(null);
-  const [batchLeft, setBatchLeft] = useState(0);
+  const [lastBatch, setLastBatch] = useState<number | null>(null);
+  const [fast, setFast] = useState(false);
+  const [mode, setMode] = useState<'count' | 'share'>('count');
+  const [selectedBin, setSelectedBin] = useState<number | null>(null);
+  const [saved, setSaved] = useState<SavedSample[]>([]);
+  const [savedKey, setSavedKey] = useState<string | null>(null);
+  const [sampleNumber, setSampleNumber] = useState(1);
+  const [replayNote, setReplayNote] = useState<string | null>(null);
+  const [pendingReplay, setPendingReplay] = useState<GaltonReplay | null>(null);
 
-  const batch = useRef({ left: 0, perMs: 0, bank: 0 });
-  const flightRef = useRef<Flight | null>(null);
+  const rngRef = useRef(createRng(seed));
+  const observationsRef = useRef<number[]>([]);
+  const savedIdRef = useRef(0);
 
-  const probability = appliedPercent / 100;
-  const parsed = parsePercent(draftPercent);
-  const isDirty = !parsed.ok || parsed.value !== appliedPercent;
-  const isBusy = flight !== null || batchLeft > 0;
-  const total = counts.reduce((sum, value) => sum + value, 0);
-  const shares = counts.map((count) => (total === 0 ? 0 : count / total));
-  const theory = binomialDistribution(probability);
-  const mean = total === 0 ? null : counts.reduce((sum, count, bin) => sum + count * bin, 0) / total;
-
-  const clearExperiment = () => {
-    batch.current = { left: 0, perMs: 0, bank: 0 };
-    flightRef.current = null;
-    setFlight(null);
-    setBatchLeft(0);
-    setLastPath(null);
-    setCounts(emptyCounts());
-  };
-
-  const dropOne = () => {
-    const path = simulatePath(probability);
-    const next = { path, points: buildWaypoints(path), elapsed: 0 };
-    flightRef.current = next;
-    setFlight(next);
-    setLastPath(null);
-  };
-
-  const dropMany = (amount: number, durationMs: number) => {
-    batch.current = { left: amount, perMs: amount / durationMs, bank: 0 };
-    setBatchLeft(amount);
-    setLastPath(null);
-  };
-
-  const applyProbability = () => {
-    if (!parsed.ok) return;
-    setAppliedPercent(parsed.value);
-    clearExperiment();
-  };
-
-  useFrameLoop(active && isBusy, (elapsed) => {
-    const current = flightRef.current;
-    if (current) {
-      const updated = { ...current, elapsed: current.elapsed + elapsed };
-      if (updated.elapsed >= HOP_MS * (updated.points.length - 1)) {
-        const bin = binOfPath(updated.path);
-        flightRef.current = null;
-        setFlight(null);
-        setLastPath(updated.path);
-        setCounts((previous) => previous.map((count, index) => (index === bin ? count + 1 : count)));
-      } else {
-        flightRef.current = updated;
-        setFlight(updated);
-      }
-      return;
-    }
-
-    const state = batch.current;
-    if (state.left <= 0) return;
-    state.bank += elapsed * state.perMs;
-    const amount = Math.min(state.left, Math.max(1, Math.floor(state.bank)));
-    state.bank = Math.max(0, state.bank - amount);
-    state.left -= amount;
-    const added = emptyCounts();
-    let path: boolean[] = [];
-    for (let ball = 0; ball < amount; ball += 1) {
-      path = simulatePath(probability);
-      added[binOfPath(path)] += 1;
-    }
-    setCounts((previous) => previous.map((count, index) => count + added[index]));
+  const geometry = boardGeometry(levels);
+  const p = percent / 100;
+  const flights = useGaltonFlights(active, geometry, (bins, path) => {
+    observationsRef.current.push(...bins);
+    setCounts((previous) => {
+      const next = [...previous];
+      for (const bin of bins) next[bin] += 1;
+      return next;
+    });
     setLastPath(path);
-    setBatchLeft(state.left);
   });
 
+  const busy = flights.inFlight > 0;
+  const total = counts.reduce((sum, value) => sum + value, 0);
+  const theory = binomialDistribution(p, levels);
+  const summary = summarizeCounts(counts);
+  const shown = formatSummary(summary);
+  const expected = binomialMean(levels, p);
+  const variance = binomialVariance(levels, p);
+  const currentKey = `${sampleNumber}:${total}`;
+  const canSave = total > 0 && !busy && currentKey !== savedKey;
+
+  /** Новая пустая выборка с заданными параметрами и seed. */
+  const restart = (nextLevels: number, nextSeed: number) => {
+    flights.cancel();
+    rngRef.current = createRng(nextSeed);
+    observationsRef.current = [];
+    setCounts(Array(nextLevels + 1).fill(0));
+    setLastPath(null);
+    setLastBatch(null);
+    setSelectedBin(null);
+    setReplayNote(null);
+    setSampleNumber((value) => value + 1);
+  };
+
+  const changeLevels = (value: number) => {
+    setLevels(value);
+    restart(value, seed);
+  };
+  const changePercent = (value: number) => {
+    setPercent(value);
+    restart(levels, seed);
+  };
+  const repeatRun = () => restart(levels, seed);
+  const newRun = () => {
+    const next = newSeed();
+    setSeed(next);
+    restart(levels, next);
+  };
+
+  const drop = (size: number) => {
+    const paths = Array.from({ length: size }, () => simulatePath(p, rngRef.current, levels));
+    setLastBatch(size);
+    setLastPath(null);
+    setReplayNote(null);
+    flights.launch(paths, launchOptions(size, fast));
+  };
+
+  // Путь из «Случайного блуждания»: сначала перестраиваем доску под его длину, затем проигрываем.
+  useEffect(() => {
+    if (!replay) return;
+    setLevels(replay.path.length);
+    restart(replay.path.length, seed);
+    setPendingReplay(replay);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [replay?.id]);
+
+  useEffect(() => {
+    if (!pendingReplay || pendingReplay.path.length !== levels) return;
+    const r = binOfPath(pendingReplay.path);
+    setReplayNote(
+      `Путь из случайного блуждания: ${pathLetters(pendingReplay.path)}. Правых шагов r = ${r} из ${levels}: положение блуждания 2r − k = ${2 * r - levels}, ячейка доски ${r}.`,
+    );
+    setLastBatch(1);
+    flights.launch([pendingReplay.path], launchOptions(1, false));
+    setPendingReplay(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingReplay, levels]);
+
+  const saveSample = () => {
+    if (!canSave) return;
+    savedIdRef.current += 1;
+    setSaved((previous) => [
+      ...previous,
+      { id: savedIdRef.current, levels, percent, size: total, mean: summary.mean, standardDeviation: summary.standardDeviation },
+    ]);
+    setSavedKey(currentKey);
+  };
+
+  const values = mode === 'count' ? counts : counts.map((count) => (total === 0 ? 0 : (count / total) * 100));
+  const theoryValues = theory.map((probability) => (mode === 'count' ? probability * total : probability * 100));
+  const chartMax = Math.max(...values, ...theoryValues, mode === 'count' ? 1 : 10);
+
+  const means = runningMeans(observationsRef.current);
+  const meanPoints = thin(
+    means.map((value, index) => [index + 1, value] as const),
+    600,
+  );
+
   let status: string;
-  if (flight) status = 'Шарик проходит уровни доски.';
-  else if (batchLeft > 0) status = 'Идёт серия шариков.';
-  else if (total === 0) status = `Новый опыт при p = ${appliedPercent} %. Запустите шарик или серию.`;
+  if (replayNote) status = replayNote;
+  else if (busy && flights.paused) status = `Пауза. В полёте ${formatInteger(flights.inFlight)} ${plural(flights.inFlight, 'шарик', 'шарика', 'шариков')}.`;
+  else if (busy && lastBatch === 1) status = 'Шарик проходит уровни доски.';
+  else if (busy) status = `Шарики падают: ещё ${formatInteger(flights.inFlight)} в полёте.`;
+  else if (total === 0) status = `Новая выборка: ${levels} уровней, p = ${percent} %. Запустите шарики.`;
+  else if (lastBatch !== null && lastBatch > 1)
+    status = `Партия из ${formatInteger(lastBatch)} ${plural(lastBatch, 'шарика', 'шариков', 'шариков')} приземлилась. Всего шариков: ${formatInteger(total)}.`;
   else if (lastPath) {
     const bin = binOfPath(lastPath);
     status = `Последний путь ${pathLetters(lastPath)}: ${bin} ${plural(bin, 'поворот', 'поворота', 'поворотов')} вправо, ячейка ${bin}.`;
   } else status = '';
 
+  const bins = Array.from({ length: levels + 1 }, (_, bin) => bin);
+  const selected = selectedBin !== null && selectedBin <= levels ? selectedBin : null;
+
   return (
-    <section
-      className="experiment experiment--galton"
-      id="panel-galton"
-      role="tabpanel"
-      aria-labelledby="tab-galton"
-      hidden={!active}
-    >
+    <section className="experiment experiment--galton" id="panel-galton" hidden={!active}>
       <div className="experiment-head">
         <h2>Доска Гальтона</h2>
-        <p>На каждом из 8 уровней шарик независимо идёт вправо с вероятностью p. Номер ячейки равен числу поворотов вправо.</p>
+        <p className="action-line">Нажми «100 шариков» и посмотри, в каких ячейках они соберутся.</p>
       </div>
 
-      <div className="viz-column galton-stack" style={{ '--bins': BIN_COUNT } as CSSProperties}>
-        <div className="board-wrap">
-          <Board flight={flight} lastPath={lastPath} />
+      <div className="viz-column galton-stack">
+        <div className="viz-group" data-testid="galton-group">
+          <BoardWithBalls geometry={geometry} lastPath={busy ? null : lastPath} canvasRef={flights.canvasRef} selectedBin={selected} />
+          <p className="status galton-status" aria-live={busy ? 'off' : 'polite'} data-testid="galton-status">
+            {status}
+          </p>
+          <div className="chart-toolbar">
+            <Segmented
+              legend="Шкала распределения"
+              options={[
+                { value: 'count', label: 'Количество' },
+                { value: 'share', label: 'Доля, %' },
+              ]}
+              value={mode}
+              onChange={setMode}
+            />
+          </div>
+          <BarChart
+            values={values}
+            labels={bins}
+            theory={theoryValues}
+            maximum={chartMax}
+            formatTick={(tick) => (mode === 'count' ? formatInteger(tick) : `${formatInteger(tick)} %`)}
+            selected={selected}
+            onSelect={(bin) => setSelectedBin(bin === selected ? null : bin)}
+            ariaLabel={`Распределение шариков по ${levels + 1} ячейкам и ожидаемое биномиальное распределение`}
+            barLabel={(bin) => `Ячейка ${bin}: ${counts[bin]} ${plural(counts[bin], 'шарик', 'шарика', 'шариков')}`}
+            labelEvery={levels > 12 ? 2 : 1}
+          />
+          <div className="chart-legend">
+            <span className="legend-bar">Фактически: {mode === 'count' ? 'число шариков' : 'доля шариков, %'}</span>
+            <span className="legend-theory legend-theory--outline">
+              Ожидалось: {mode === 'count' ? 'N · P(ячейка)' : 'P(ячейка), %'} при m = {levels}, p = {percent}&nbsp;%
+            </span>
+          </div>
+          <p className="bin-info" data-testid="galton-bin-info" aria-live="polite">
+            {selected === null
+              ? 'Нажмите на столбец, чтобы сравнить факт и ожидание в ячейке.'
+              : mode === 'count'
+                ? `Ячейка ${selected} · фактически ${formatInteger(counts[selected])} · ожидалось ${formatStatistic(theory[selected] * total)}`
+                : `Ячейка ${selected} · фактически ${total === 0 ? NO_DATA.toLowerCase() : formatShare(counts[selected] / total)} · ожидалось ${formatOneDecimal(theory[selected] * 100)} %`}
+          </p>
         </div>
-        <Histogram shares={shares} theory={theory} />
-
-        <div className="chart-legend">
-          <span className="legend-bar">Доля шариков в опыте</span>
-          <span className="legend-theory">Биномиальная теория при p = {appliedPercent}&nbsp;%</span>
-        </div>
-      </div>
-
-      <div className="bin-tables">
-        <table className="bin-table bin-table--wide">
-          <caption className="visually-hidden">Результаты по ячейкам</caption>
-          <colgroup>
-            <col className="bin-table-heading" />
-            <col span={BIN_COUNT} />
-          </colgroup>
-          <tbody>
-            <tr>
-              <th scope="row">Ячейка</th>
-              {BINS.map((bin) => (
-                <th scope="col" key={bin}>
-                  {bin}
-                </th>
-              ))}
-            </tr>
-            <tr>
-              <th scope="row">Шарики</th>
-              {BINS.map((bin) => (
-                <td key={bin} data-testid={`galton-count-${bin}`}>
-                  {formatInteger(counts[bin])}
-                </td>
-              ))}
-            </tr>
-            <tr>
-              <th scope="row">Доля, %</th>
-              {BINS.map((bin) => (
-                <td key={bin} data-testid={`galton-share-${bin}`}>
-                  {total === 0 ? '0,0' : formatOneDecimal(shares[bin] * 100)}
-                </td>
-              ))}
-            </tr>
-            <tr className="tone-cyan">
-              <th scope="row">Теория, %</th>
-              {BINS.map((bin) => (
-                <td key={bin} data-testid={`galton-theory-${bin}`}>
-                  {formatOneDecimal(theory[bin] * 100)}
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
-
-        <table className="data-table bin-table--stack">
-          <caption className="visually-hidden">Результаты по ячейкам</caption>
-          <thead>
-            <tr>
-              <th scope="col">Ячейка</th>
-              <th scope="col">Шарики</th>
-              <th scope="col">Доля, %</th>
-              <th scope="col">Теория, %</th>
-            </tr>
-          </thead>
-          <tbody>
-            {BINS.map((bin) => (
-              <tr key={bin}>
-                <th scope="row">{bin}</th>
-                <td>{formatInteger(counts[bin])}</td>
-                <td>{total === 0 ? '0,0' : formatOneDecimal(shares[bin] * 100)}</td>
-                <td className="tone-cyan">{formatOneDecimal(theory[bin] * 100)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
 
       <div className="side-column">
-        <Readouts
-          items={[
-            { label: 'Шарики', value: formatInteger(total), tone: 'amber', testId: 'galton-total' },
-            { label: 'Вправо, p', value: `${appliedPercent} %`, tone: 'cyan', testId: 'galton-p' },
-          ]}
-        />
-        <p className="balance" data-testid="galton-mean">
-          Средняя ячейка: {mean === null ? 'нет данных' : formatOneDecimal(mean)}, теория{' '}
-          {formatOneDecimal(LEVELS * probability)}
-        </p>
-        <p className="status" aria-live={isBusy ? 'off' : 'polite'} data-testid="galton-status">
-          {status}
-        </p>
 
         <div className="actions actions--four">
-          <button className="btn" type="button" disabled={isBusy} onClick={dropOne}>
-            1 шарик
+          {BATCHES.map(({ size, label }) => (
+            <button
+              key={size}
+              className={lastBatch === size ? 'btn btn--primary' : 'btn'}
+              type="button"
+              aria-current={lastBatch === size ? 'true' : undefined}
+              data-testid={`galton-run-${size}`}
+              disabled={busy}
+              onClick={() => drop(size)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="actions actions--two">
+          <button className="btn" type="button" disabled={!busy} onClick={() => flights.setPaused(!flights.paused)}>
+            {flights.paused ? 'Продолжить' : 'Пауза'}
           </button>
-          <button className="btn btn--primary" type="button" disabled={isBusy} onClick={() => dropMany(100, 500)}>
-            100 шариков
-          </button>
-          <button className="btn" type="button" disabled={isBusy} onClick={() => dropMany(1000, 1000)}>
-            1000 шариков
-          </button>
-          <button className="btn btn--quiet" type="button" onClick={clearExperiment}>
+          <button className="btn btn--quiet" type="button" onClick={newRun}>
             Сбросить
           </button>
         </div>
+        <Readouts
+          items={[
+            { label: 'Всего шариков', value: formatInteger(total), tone: 'amber', testId: 'galton-total' },
+            { label: 'Последняя партия', value: lastBatch === null ? '—' : formatInteger(lastBatch), tone: 'cyan', testId: 'galton-last-batch' },
+          ]}
+        />
+        <p className="balance" data-testid="galton-batch">
+          Последняя партия — {lastBatch === null ? 'нет' : formatInteger(lastBatch)}, всего шариков — {formatInteger(total)}
+        </p>
+        <label className="check">
+          <input type="checkbox" checked={fast} onChange={(event) => setFast(event.target.checked)} />
+          <span>Быстрый режим: короткий полёт, на доске видна часть траекторий. Учитываются все шарики.</span>
+        </label>
 
-        <div className="field">
-          <label htmlFor="galton-p-range">Вероятность поворота вправо, p</label>
-          <div className="range-row">
-            <input
-              id="galton-p-range"
-              className="range"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value={parsed.ok ? parsed.value : appliedPercent}
-              onChange={(event) => setDraftPercent(event.target.value)}
-            />
-            <input
-              className="input input--short"
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              aria-label="Значение p в процентах"
-              value={draftPercent}
-              aria-invalid={!parsed.ok}
-              onChange={(event) => setDraftPercent(event.target.value)}
-            />
-            <span aria-hidden="true">%</span>
+        <RangeField id="galton-levels" label="Число уровней m" value={levels} min={MIN_LEVELS} max={MAX_LEVELS} onChange={changeLevels} display={String(levels)} />
+        <RangeField id="galton-p" label="Вероятность поворота вправо p" value={percent} min={0} max={100} onChange={changePercent} display={`${percent} %`} />
+        <p className="hint">Изменение параметров начинает новую выборку.</p>
+
+        <StatsTable
+          title={`Выборка: m = ${levels}, p = ${percent} %`}
+          rows={[
+            { label: 'Объём N', value: shown.size, testId: 'galton-stat-size' },
+            { label: 'Среднее x̄', value: shown.mean, theory: `E(X) = mp ${equalsSign(expected)} ${formatStatistic(expected)}`, testId: 'galton-stat-mean' },
+            { label: 'Медиана', value: shown.median, testId: 'galton-stat-median' },
+            { label: summary.modes.length > 1 ? 'Моды' : 'Мода', value: shown.modes, testId: 'galton-stat-mode' },
+            {
+              label: (
+                <>
+                  Исправленная дисперсия s<sup>2</sup>
+                </>
+              ),
+              value: shown.variance,
+              theory: `D(X) = mp(1 − p) ${equalsSign(variance)} ${formatStatistic(variance)}`,
+              testId: 'galton-stat-variance',
+            },
+            {
+              label: 'Стандартное отклонение s',
+              value: shown.standardDeviation,
+              theory: `√D(X) ${equalsSign(Math.sqrt(variance))} ${formatStatistic(Math.sqrt(variance))}`,
+              testId: 'galton-stat-deviation',
+            },
+          ]}
+        />
+        <button className="btn" type="button" disabled={!canSave} onClick={saveSample}>
+          Сохранить выборку
+        </button>
+
+        <RunControls seed={seed} onRepeat={repeatRun} onNew={newRun} />
+      </div>
+
+      <div className="bin-tables">
+        <LineChart
+          series={[
+            { points: meanPoints, className: 'series-amber', label: 'Накопленное среднее выборки' },
+            { points: [[0, expected], [Math.max(1, total), expected]], className: 'series-cyan', label: `E(X) = mp = ${formatStatistic(expected)}`, kind: 'dashed' },
+          ]}
+          xDomain={[0, Math.max(1, total)]}
+          yDomain={[0, levels]}
+          xLabel="Число учтённых шариков (в порядке приземления)"
+          yLabel="Накопленное среднее, номер ячейки"
+          formatX={formatInteger}
+          ariaLabel="График накопленного среднего и теоретического значения"
+        />
+        {saved.length > 0 ? (
+          <section className="stats-panel" aria-labelledby="galton-compare-title">
+            <h3 id="galton-compare-title">Сохранённые выборки</h3>
+            <div className="table-scroll">
+              <table className="data-table compare-table" data-testid="galton-compare">
+                <thead>
+                  <tr>
+                    <th scope="col">№</th>
+                    <th scope="col">m</th>
+                    <th scope="col">p</th>
+                    <th scope="col">N</th>
+                    <th scope="col">x̄</th>
+                    <th scope="col">E(X)</th>
+                    <th scope="col">|x̄ − E(X)|</th>
+                    <th scope="col">s</th>
+                    <th scope="col">√D(X)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {saved.map((sample, index) => {
+                    const e = binomialMean(sample.levels, sample.percent / 100);
+                    return (
+                      <tr key={sample.id}>
+                        <th scope="row">{index + 1}</th>
+                        <td>{sample.levels}</td>
+                        <td>{sample.percent}&nbsp;%</td>
+                        <td>{formatInteger(sample.size)}</td>
+                        <td className="tone-amber">{sample.mean === null ? NO_DATA : formatStatistic(sample.mean)}</td>
+                        <td className="tone-cyan">{formatStatistic(e)}</td>
+                        <td>{sample.mean === null ? NO_DATA : formatStatistic(Math.abs(sample.mean - e))}</td>
+                        <td>{sample.standardDeviation === null ? '—' : formatStatistic(sample.standardDeviation)}</td>
+                        <td className="tone-cyan">{formatStatistic(Math.sqrt(binomialVariance(sample.levels, sample.percent / 100)))}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <button className="btn btn--quiet compare-clear" type="button" onClick={() => setSaved([])}>
+              Очистить сохранённые
+            </button>
+          </section>
+        ) : null}
+
+        <details className="more">
+          <summary>Таблица по ячейкам</summary>
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Ячейка</th>
+                  <th scope="col">Шарики</th>
+                  <th scope="col">Доля, %</th>
+                  <th scope="col">Теория, %</th>
+                  <th scope="col">Путей C(m, k)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bins.map((bin) => (
+                  <tr key={bin}>
+                    <th scope="row">{bin}</th>
+                    <td data-testid={`galton-count-${bin}`}>{formatInteger(counts[bin])}</td>
+                    <td>{total === 0 ? '—' : formatOneDecimal((counts[bin] / total) * 100)}</td>
+                    <td className="tone-cyan" data-testid={`galton-theory-${bin}`}>
+                      {formatStatistic(theory[bin] * 100)}
+                    </td>
+                    <td>{formatInteger(binomialCoefficient(levels, bin))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          {!parsed.ok ? (
-            <p className="hint hint--error" role="alert">
-              {parsed.error}
-            </p>
-          ) : isDirty ? (
-            <p className="hint">Опыт идёт при p = {appliedPercent}&nbsp;%, пока новое значение не применено.</p>
-          ) : null}
-          <button
-            className={parsed.ok && isDirty ? 'btn btn--primary' : 'btn'}
-            type="button"
-            disabled={!parsed.ok}
-            onClick={applyProbability}
-          >
-            Применить p и начать новый опыт
-          </button>
-        </div>
+        </details>
 
-        <Reveal
-          question="Почему при равных шансах центральные ячейки заполняются чаще крайних?"
-          openLabel="Показать объяснение"
-          closeLabel="Скрыть объяснение"
-        >
-          <p>
-            При p = 50&nbsp;% каждая последовательность из 8 поворотов имеет одну и ту же вероятность 1/256. Значит, ячейка
-            заполняется тем чаще, чем больше последовательностей в неё ведёт.
-          </p>
-          <ol className="paths" aria-label="Число последовательностей для каждой ячейки">
-            {BINS.map((bin) => (
-              <li key={bin} className={bin === 4 ? 'paths-item paths-item--center' : 'paths-item'}>
-                <span className="paths-count">{PATH_COUNTS[bin]}</span>
-                <span className="paths-bar" style={{ height: `${(PATH_COUNTS[bin] / 70) * 100}%` }} />
-                <span className="paths-bin">{bin}</span>
-              </li>
-            ))}
-          </ol>
-          <p className="hint">Сверху указано число последовательностей, снизу номер ячейки.</p>
-          <p>
-            В центральную ячейку 4 ведут 70 последовательностей с четырьмя поворотами вправо, например ППППЛЛЛЛ, ПЛПЛПЛПЛ и
-            ЛППЛЛППЛ. Её вероятность равна 70/256, это около 27,3&nbsp;%.
-          </p>
-          <p>
-            В каждую крайнюю ячейку ведёт только одна последовательность: ЛЛЛЛЛЛЛЛ в ячейку 0 и ПППППППП в ячейку 8. Вероятность
-            каждой из них равна 1/256, это около 0,4&nbsp;%.
-          </p>
-        </Reveal>
+        <details className="more">
+          <summary>Формулы и объяснение</summary>
+          <div className="more-body">
+            <p>
+              Каждый путь из m поворотов, в котором ровно k поворотов вправо, имеет вероятность p<sup>k</sup>(1 − p)
+              <sup>m−k</sup>. Таких путей C(m, k), поэтому P(X = k) = C(m, k) · p<sup>k</sup>(1 − p)<sup>m−k</sup>.
+            </p>
+            <p>
+              При m = 8 и p = 50&nbsp;% в центральную ячейку 4 ведут C(8, 4) = 70 путей из 256, её вероятность 70/256 ≈ 27,3&nbsp;%. Среднее
+              E(X) = mp = 4, дисперсия D(X) = mp(1 − p) = 2.
+            </p>
+            <p>
+              Накопленное среднее колеблется вокруг E(X) и с ростом N обычно приближается к нему. Это закономерность для
+              больших выборок, а не гарантия для каждого отдельного шага.
+            </p>
+          </div>
+        </details>
       </div>
     </section>
   );

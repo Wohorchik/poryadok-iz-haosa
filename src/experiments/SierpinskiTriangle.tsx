@@ -1,22 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
+import { RangeField, RunControls, Segmented } from '../components/Charts';
 import { Readouts } from '../components/Readouts';
 import { Reveal } from '../components/Reveal';
 import { useFrameLoop } from '../hooks/useFrameLoop';
 import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
+  CHECKPOINTS,
+  CLASSIC_FRACTION,
+  COMPARE_WEIGHTS,
   ChaosRun,
   EQUAL_WEIGHTS,
   SKEWED_WEIGHTS,
   VERTEX_NAMES,
   VERTICES,
+  describePattern,
   parseWeights,
+  patternName,
   toProbabilities,
   type Triple,
   type VertexIndex,
 } from '../lib/chaosGame';
-import { DensityMap } from '../lib/densityMap';
-import { formatInteger, formatShare } from '../lib/format';
+import { downloadBlob } from '../lib/csv';
+import { DENSITY_STOPS, DensityMap, ORDER_STOPS, cssGradient, type ColorMode } from '../lib/densityMap';
+import { formatInteger, formatShare, formatStatistic } from '../lib/format';
+import { createRng, newSeed } from '../lib/random';
 
 type Draft = [string, string, string];
 
@@ -29,8 +37,16 @@ const SPEEDS = [
 const PRESETS: readonly { label: string; draft: Draft }[] = [
   { label: 'Равные шансы', draft: ['1', '1', '1'] },
   { label: '60/30/10', draft: ['60', '30', '10'] },
+  { label: '0/1/1', draft: ['0', '1', '1'] },
 ];
 
+const COLOR_MODES = [
+  { value: 'vertex', label: 'По вершине' },
+  { value: 'density', label: 'По плотности' },
+  { value: 'order', label: 'По порядку' },
+] as const;
+
+const COMPARE_STEPS = [5000, 20000, 100000] as const;
 const VERTEX_INDEXES = [0, 1, 2] as const;
 const LABEL_OFFSETS = [
   { x: 34, y: 8 },
@@ -47,6 +63,7 @@ interface Snapshot {
   previousY: number;
   lastVertex: VertexIndex | null;
   countsAtThirty: Triple | null;
+  checkpoints: Partial<Record<number, Triple>>;
 }
 
 const takeSnapshot = (run: ChaosRun): Snapshot => ({
@@ -58,65 +75,210 @@ const takeSnapshot = (run: ChaosRun): Snapshot => ({
   previousY: run.previousY,
   lastVertex: run.lastVertex,
   countsAtThirty: run.countsAtThirty,
+  checkpoints: { ...run.checkpoints },
 });
 
-function describePattern(weights: Triple): string {
-  const probabilities = toProbabilities(weights);
-  const active = VERTEX_INDEXES.filter((index) => weights[index] > 0);
-  if (active.length === 1) {
-    return `Участвует только вершина ${VERTEX_NAMES[active[0]]}, поэтому точка с каждым шагом приближается к ней.`;
+const shares = (counts: Triple) => {
+  const total = counts[0] + counts[1] + counts[2];
+  return VERTEX_INDEXES.map((index) => (total === 0 ? '—' : formatShare(counts[index] / total))).join(' · ');
+};
+
+function ColorLegend({ mode }: { mode: ColorMode }) {
+  if (mode === 'vertex') {
+    return (
+      <p className="color-legend" data-testid="color-legend">
+        {VERTEX_INDEXES.map((index) => (
+          <span key={index} className={`vertex-${index}`}>
+            ● точка после выбора {VERTEX_NAMES[index]}
+          </span>
+        ))}
+        <span className="hint">яркость растёт с числом попаданий</span>
+      </p>
+    );
   }
-  if (active.length === 2) {
-    return `Участвуют только вершины ${VERTEX_NAMES[active[0]]} и ${VERTEX_NAMES[active[1]]}, поэтому точки ложатся на сторону между ними.`;
-  }
-  if (weights[0] === weights[1] && weights[1] === weights[2]) {
-    return 'Равные шансы: точки складываются в фрактальный узор из трёх уменьшенных копий целого с пустотой в центре. Каждая копия получает около трети точек.';
-  }
-  const ordered = [...VERTEX_INDEXES].sort((first, second) => probabilities[second] - probabilities[first]);
-  const densest = ordered[0];
-  const sparsest = ordered[2];
-  return `Неравные шансы: контур узора сохраняется, а плотность меняется. Часть у вершины ${VERTEX_NAMES[densest]} получает около ${formatShare(probabilities[densest])} точек, часть у вершины ${VERTEX_NAMES[sparsest]} около ${formatShare(probabilities[sparsest])}.`;
+  return (
+    <div className="color-legend" data-testid="color-legend">
+      <span>{mode === 'density' ? 'мало попаданий' : 'ранние шаги'}</span>
+      <i className="gradient-bar" style={{ background: cssGradient(mode === 'density' ? DENSITY_STOPS : ORDER_STOPS) }} />
+      <span>{mode === 'density' ? 'много (логарифмическая шкала)' : 'поздние шаги'}</span>
+    </div>
+  );
 }
 
-function ComparisonCanvas({ weights, title, caption }: { weights: Triple; title: string; caption: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+/** Сохраняет рисунок в PNG: фон, точки, контур треугольника и подписи вершин. */
+function exportPng(canvas: HTMLCanvasElement | null, title: string) {
+  if (!canvas) return;
+  const out = document.createElement('canvas');
+  out.width = canvas.width;
+  out.height = canvas.height + 40;
+  const context = out.getContext('2d');
+  if (!context) return;
+  const styles = getComputedStyle(canvas);
+  context.fillStyle = styles.getPropertyValue('--deep').trim() || '#071530';
+  context.fillRect(0, 0, out.width, out.height);
+  context.drawImage(canvas, 0, 0);
+  context.strokeStyle = styles.getPropertyValue('--rule-strong').trim() || '#7d97c2';
+  context.lineWidth = 2;
+  context.beginPath();
+  VERTICES.forEach((vertex, index) => (index === 0 ? context.moveTo(vertex.x, vertex.y) : context.lineTo(vertex.x, vertex.y)));
+  context.closePath();
+  context.stroke();
+  context.fillStyle = '#f3f7ff';
+  context.font = '600 22px sans-serif';
+  VERTEX_INDEXES.forEach((index) => {
+    context.textAlign = index === 2 ? 'right' : 'left';
+    context.fillText(VERTEX_NAMES[index], VERTICES[index].x + LABEL_OFFSETS[index].x, VERTICES[index].y + LABEL_OFFSETS[index].y);
+  });
+  context.textAlign = 'left';
+  context.font = '500 18px sans-serif';
+  context.fillText(title, 16, out.height - 14);
+  out.toBlob((blob) => {
+    if (blob) downloadBlob('igra-haosa.png', blob);
+  }, 'image/png');
+}
 
+/* ---------- Сравнение двух рисунков ---------- */
+
+function CompareSide({
+  weights,
+  draft,
+  onDraft,
+  map,
+  counts,
+  sharedMax,
+  mode,
+  side,
+}: {
+  weights: Triple;
+  draft: Draft;
+  onDraft: (draft: Draft) => void;
+  map: DensityMap;
+  counts: Triple;
+  sharedMax: number;
+  mode: ColorMode;
+  side: 'left' | 'right';
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const parsed = parseWeights(draft);
   useEffect(() => {
     const context = canvasRef.current?.getContext('2d');
-    if (!context) return;
-    const map = new DensityMap(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 1, 0.5);
-    const run = new ChaosRun(weights);
-    for (let step = 0; step < 40000; step += 1) {
-      const vertex = run.step();
-      map.add(run.x, run.y, vertex);
-    }
-    map.draw(context);
-  }, [weights]);
-
+    if (context) map.draw(context, mode, mode === 'density' ? sharedMax : undefined);
+  }, [map, mode, sharedMax]);
   return (
-    <figure className="compare-item">
-      <canvas ref={canvasRef} width={CANVAS_WIDTH / 2} height={CANVAS_HEIGHT / 2} role="img" aria-label={caption} />
+    <figure className="compare-item" data-testid={`compare-${side}`}>
+      <canvas ref={canvasRef} width={CANVAS_WIDTH / 2} height={CANVAS_HEIGHT / 2} role="img" aria-label={`Рисунок при весах ${weights.join(':')}`} />
       <figcaption>
-        <strong>{title}</strong>
-        <span>{caption}</span>
+        <div className="weights weights--compact">
+          {VERTEX_INDEXES.map((index) => (
+            <label key={index} className={`vertex-${index}`}>
+              {VERTEX_NAMES[index]}
+              <input
+                className="input input--short"
+                type="text"
+                inputMode="decimal"
+                value={draft[index]}
+                aria-invalid={!parsed.ok}
+                onChange={(event) => {
+                  const next: Draft = [...draft];
+                  next[index] = event.target.value;
+                  onDraft(next);
+                }}
+              />
+            </label>
+          ))}
+        </div>
+        {!parsed.ok ? <span className="hint hint--error">{parsed.error}</span> : null}
+        <span data-testid={`compare-${side}-shares`}>
+          Фактические доли A · B · C: {shares(counts)}
+        </span>
+        <span className="hint">Заданные: {toProbabilities(weights).map(formatShare).join(' · ')}</span>
       </figcaption>
     </figure>
   );
 }
 
+function buildCompare(weights: Triple, steps: number, seed: number, fraction: number) {
+  const map = new DensityMap(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 1, 0.5);
+  const run = new ChaosRun(weights, createRng(seed), fraction);
+  for (let step = 0; step < steps; step += 1) {
+    const vertex = run.step();
+    map.add(run.x, run.y, vertex);
+  }
+  return { map, counts: [...run.counts] as unknown as Triple };
+}
+
+function CompareMode({ fraction, mode }: { fraction: number; mode: ColorMode }) {
+  const [left, setLeft] = useState<Draft>(['1', '1', '1']);
+  const [right, setRight] = useState<Draft>(COMPARE_WEIGHTS.map(String) as Draft);
+  const [leftWeights, setLeftWeights] = useState<Triple>(EQUAL_WEIGHTS);
+  const [rightWeights, setRightWeights] = useState<Triple>(COMPARE_WEIGHTS);
+  const [steps, setSteps] = useState<number>(20000);
+  const [seed, setSeed] = useState(newSeed);
+  const [result, setResult] = useState(() => ({
+    left: buildCompare(EQUAL_WEIGHTS, 20000, seed, fraction),
+    right: buildCompare(COMPARE_WEIGHTS, 20000, seed, fraction),
+  }));
+
+  useEffect(() => {
+    setResult({ left: buildCompare(leftWeights, steps, seed, fraction), right: buildCompare(rightWeights, steps, seed, fraction) });
+  }, [leftWeights, rightWeights, steps, seed, fraction]);
+
+  const onDraft = (side: 'left' | 'right') => (draft: Draft) => {
+    (side === 'left' ? setLeft : setRight)(draft);
+    const parsed = parseWeights(draft);
+    if (parsed.ok) (side === 'left' ? setLeftWeights : setRightWeights)(parsed.weights);
+  };
+  const sharedMax = Math.max(result.left.map.maxCount, result.right.map.maxCount);
+
+  return (
+    <section className="compare-mode" data-testid="compare-mode" aria-labelledby="compare-title">
+      <h3 id="compare-title">Сравнить два рисунка</h3>
+      <p className="hint">
+        У обеих сторон одинаковые старт в A, число шагов, t и одна и та же последовательность случайных чисел (seed {seed}).
+        Отличаются только веса. {mode === 'density' ? 'Карты плотности используют общую шкалу яркости.' : ''}
+      </p>
+      <div className="compare">
+        <CompareSide side="left" weights={leftWeights} draft={left} onDraft={onDraft('left')} map={result.left.map} counts={result.left.counts} sharedMax={sharedMax} mode={mode} />
+        <CompareSide side="right" weights={rightWeights} draft={right} onDraft={onDraft('right')} map={result.right.map} counts={result.right.counts} sharedMax={sharedMax} mode={mode} />
+      </div>
+      <ColorLegend mode={mode} />
+      <Segmented
+        legend="Шагов на каждой стороне"
+        options={COMPARE_STEPS.map((value) => ({ value, label: formatInteger(value) }))}
+        value={steps}
+        onChange={setSteps}
+      />
+      <RunControls
+        seed={seed}
+        onRepeat={() => setResult({ left: buildCompare(leftWeights, steps, seed, fraction), right: buildCompare(rightWeights, steps, seed, fraction) })}
+        onNew={() => setSeed(newSeed())}
+        note="При одинаковых весах обе стороны дают одинаковый рисунок."
+      />
+    </section>
+  );
+}
+
+/* ---------- Основной опыт ---------- */
+
 export function SierpinskiTriangle({ active }: { active: boolean }) {
   const [applied, setApplied] = useState<Triple>(EQUAL_WEIGHTS);
   const [draft, setDraft] = useState<Draft>(['1', '1', '1']);
+  const [fraction, setFraction] = useState(CLASSIC_FRACTION);
   const [running, setRunning] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(1);
+  const [mode, setMode] = useState<ColorMode>('vertex');
+  const [compare, setCompare] = useState(false);
+  const [seed, setSeed] = useState(newSeed);
   const [map] = useState(() => new DensityMap(CANVAS_WIDTH, CANVAS_HEIGHT, 2));
 
   const runRef = useRef<ChaosRun | null>(null);
-  runRef.current ??= new ChaosRun(EQUAL_WEIGHTS);
+  runRef.current ??= new ChaosRun(EQUAL_WEIGHTS, createRng(seed), CLASSIC_FRACTION);
   const [snapshot, setSnapshot] = useState<Snapshot>(() => takeSnapshot(runRef.current as ChaosRun));
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stepBank = useRef(0);
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
   const parsed = parseWeights(draft);
   const draftProbabilities = parsed.ok ? toProbabilities(parsed.weights) : null;
@@ -126,8 +288,11 @@ export function SierpinskiTriangle({ active }: { active: boolean }) {
 
   const paint = () => {
     const context = canvasRef.current?.getContext('2d');
-    if (context) map.draw(context);
+    if (context) map.draw(context, modeRef.current);
   };
+
+  // Переключение окраски перекрашивает накопленный рисунок.
+  useEffect(paint, [mode, map]);
 
   const advance = (count: number) => {
     const run = runRef.current as ChaosRun;
@@ -139,12 +304,12 @@ export function SierpinskiTriangle({ active }: { active: boolean }) {
     setSnapshot(takeSnapshot(run));
   };
 
-  const startExperiment = (weights: Triple) => {
+  const startExperiment = (weights: Triple, nextFraction: number, nextSeed: number) => {
     setRunning(false);
     stepBank.current = 0;
     map.clear();
     paint();
-    const run = new ChaosRun(weights);
+    const run = new ChaosRun(weights, createRng(nextSeed), nextFraction);
     runRef.current = run;
     setSnapshot(takeSnapshot(run));
   };
@@ -152,10 +317,21 @@ export function SierpinskiTriangle({ active }: { active: boolean }) {
   const applySettings = () => {
     if (!parsed.ok) return;
     setApplied(parsed.weights);
-    startExperiment(parsed.weights);
+    startExperiment(parsed.weights, fraction, seed);
   };
 
-  useFrameLoop(active && running, (elapsed) => {
+  const changeFraction = (value: number) => {
+    setFraction(value);
+    startExperiment(applied, value, seed);
+  };
+
+  const newRun = () => {
+    const next = newSeed();
+    setSeed(next);
+    startExperiment(applied, fraction, next);
+  };
+
+  useFrameLoop(active && running && !compare, (elapsed) => {
     stepBank.current += (elapsed * speed) / 1000;
     const count = Math.floor(stepBank.current);
     if (count === 0) return;
@@ -165,212 +341,272 @@ export function SierpinskiTriangle({ active }: { active: boolean }) {
 
   const showMove = snapshot.lastVertex !== null && (!running || speed <= SPEEDS[0].stepsPerSecond);
   const moveTarget = snapshot.lastVertex !== null ? VERTICES[snapshot.lastVertex] : null;
+  const name = patternName(fraction);
 
   let status: string;
   if (snapshot.steps === 0) status = 'Старт в вершине A. Сделайте шаг или запустите построение.';
   else if (running) status = 'Идёт построение.';
   else if (snapshot.lastVertex !== null)
-    status = `Шаг ${formatInteger(snapshot.steps)}: выбрана вершина ${VERTEX_NAMES[snapshot.lastVertex]}, новая точка стоит посередине пути к ней.`;
+    status = `Шаг ${formatInteger(snapshot.steps)}: выбрана вершина ${VERTEX_NAMES[snapshot.lastVertex]}. Новая точка стоит на доле t = ${formatStatistic(fraction)} пути от предыдущей точки к вершине.`;
   else status = '';
 
   return (
-    <section
-      className="experiment"
-      id="panel-triangle"
-      role="tabpanel"
-      aria-labelledby="tab-triangle"
-      hidden={!active}
-    >
+    <section className="experiment" id="panel-triangle" hidden={!active}>
       <div className="experiment-head">
         <h2>Треугольник Серпинского</h2>
-        <p>На каждом шаге случайно выбирается вершина, и новая точка ставится посередине между ней и текущей точкой.</p>
+        <p className="action-line">Нажми «Запустить» и смотри, как из случайных шагов складывается узор.</p>
       </div>
 
       <div className="viz-column">
         <div className="viz-pin">
-        <div className="triangle">
-          <canvas
-            ref={canvasRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            role="img"
-            aria-label={`Точки опыта с вершинами A, B и C. Сделано шагов: ${snapshot.steps}.`}
-          />
-          <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`} aria-hidden="true">
-            <polygon className="triangle-outline" points={VERTICES.map((point) => `${point.x},${point.y}`).join(' ')} />
-            {showMove && moveTarget ? (
-              <>
-                <line
-                  className="triangle-move"
-                  x1={snapshot.previousX}
-                  y1={snapshot.previousY}
-                  x2={moveTarget.x}
-                  y2={moveTarget.y}
+          <div className="picture-toolbar">
+            <Segmented legend="Окраска" options={COLOR_MODES} value={mode} onChange={setMode} />
+            <Segmented
+              legend="Режим"
+              options={[
+                { value: 'single', label: 'Один рисунок' },
+                { value: 'compare', label: 'Сравнить два' },
+              ]}
+              value={compare ? 'compare' : 'single'}
+              onChange={(value) => {
+                setRunning(false);
+                setCompare(value === 'compare');
+              }}
+            />
+          </div>
+          {compare ? (
+            <CompareMode fraction={fraction} mode={mode} />
+          ) : (
+            <>
+              <p className="pattern-name" data-testid="pattern-name">
+                {name}
+              </p>
+              <div className="triangle">
+                <canvas
+                  ref={canvasRef}
+                  width={CANVAS_WIDTH}
+                  height={CANVAS_HEIGHT}
+                  role="img"
+                  aria-label={`${name}: точки опыта с вершинами A, B и C. Сделано шагов: ${snapshot.steps}.`}
                 />
-                <circle className="triangle-previous" cx={snapshot.previousX} cy={snapshot.previousY} r="6" />
-              </>
-            ) : null}
-            <circle className="triangle-current" cx={snapshot.x} cy={snapshot.y} r="8" />
-            {VERTEX_INDEXES.map((index) => (
-              <text
-                key={index}
-                className={`triangle-label vertex-${index}`}
-                x={VERTICES[index].x + LABEL_OFFSETS[index].x}
-                y={VERTICES[index].y + LABEL_OFFSETS[index].y}
-                textAnchor={index === 2 ? 'end' : 'start'}
-              >
-                {VERTEX_NAMES[index]}
-              </text>
-            ))}
-          </svg>
-        </div>
-        <p className="status" aria-live={running ? 'off' : 'polite'} data-testid="triangle-status">
-          {status}
-        </p>
+                <svg viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`} aria-hidden="true">
+                  <polygon className="triangle-outline" points={VERTICES.map((point) => `${point.x},${point.y}`).join(' ')} />
+                  {showMove && moveTarget ? (
+                    <>
+                      <line className="triangle-move" x1={snapshot.previousX} y1={snapshot.previousY} x2={moveTarget.x} y2={moveTarget.y} />
+                      <circle className="triangle-vertex-pick" cx={moveTarget.x} cy={moveTarget.y} r="14" />
+                      <circle className="triangle-previous" cx={snapshot.previousX} cy={snapshot.previousY} r="6" />
+                    </>
+                  ) : null}
+                  <circle className="triangle-current" cx={snapshot.x} cy={snapshot.y} r="8" />
+                  {VERTEX_INDEXES.map((index) => (
+                    <text
+                      key={index}
+                      className={`triangle-label vertex-${index}`}
+                      x={VERTICES[index].x + LABEL_OFFSETS[index].x}
+                      y={VERTICES[index].y + LABEL_OFFSETS[index].y}
+                      textAnchor={index === 2 ? 'end' : 'start'}
+                    >
+                      {VERTEX_NAMES[index]}
+                    </text>
+                  ))}
+                </svg>
+              </div>
+              <ColorLegend mode={mode} />
+              {showMove ? (
+                <p className="hint triangle-legend">
+                  <span className="dot dot--previous" /> предыдущая точка · <span className="dot dot--vertex" /> выбранная вершина ·{' '}
+                  <span className="dot dot--current" /> новая точка
+                </p>
+              ) : null}
+              <p className="status" aria-live={running ? 'off' : 'polite'} data-testid="triangle-status">
+                {status}
+              </p>
+            </>
+          )}
         </div>
       </div>
 
       <div className="side-column">
-        <Readouts items={[{ label: 'Шаги', value: formatInteger(snapshot.steps), tone: 'amber', testId: 'triangle-steps' }]} />
-
-        <div className="actions actions--four">
-          <button className="btn" type="button" disabled={running} onClick={() => advance(1)}>
-            1 шаг
-          </button>
-          <button className="btn btn--primary" type="button" disabled={running} onClick={() => setRunning(true)}>
-            {snapshot.steps > 0 ? 'Продолжить' : 'Запустить'}
-          </button>
-          <button className="btn" type="button" disabled={!running} onClick={() => setRunning(false)}>
-            Пауза
-          </button>
-          <button className="btn btn--quiet" type="button" onClick={() => startExperiment(applied)}>
-            Сбросить
-          </button>
-        </div>
-
-        <fieldset className="segmented">
-          <legend>Скорость построения</legend>
-          <div className="segmented-options">
-            {SPEEDS.map((option, index) => (
-              <button
-                key={option.label}
-                className="chip"
-                type="button"
-                aria-pressed={speedIndex === index}
-                onClick={() => setSpeedIndex(index)}
-              >
-                {option.label}
+        {compare ? (
+          <>
+            <RangeField
+              id="chaos-fraction"
+              label="Доля пути до вершины t"
+              value={fraction}
+              min={0.1}
+              max={0.9}
+              step={0.01}
+              onChange={changeFraction}
+              display={formatStatistic(fraction)}
+              marks={[{ value: 0.5, label: '0,5 — классика' }]}
+            />
+            <p className="hint">В режиме сравнения веса задаются под каждым рисунком.</p>
+          </>
+        ) : (
+          <>
+            <div className="actions actions--four">
+              <button className="btn" type="button" disabled={running} onClick={() => advance(1)}>
+                1 шаг
               </button>
-            ))}
-          </div>
-        </fieldset>
-
-        <div className="table-scroll">
-          <table className="data-table">
-            <caption>Вершины в текущем опыте</caption>
-            <thead>
-              <tr>
-                <th scope="col">Вершина</th>
-                <th scope="col">Вероятность</th>
-                <th scope="col">Выборы</th>
-                <th scope="col">Частота</th>
-              </tr>
-            </thead>
-            <tbody>
-              {VERTEX_INDEXES.map((index) => (
-                <tr key={index}>
-                  <th scope="row" className={`vertex-${index}`}>
-                    {VERTEX_NAMES[index]}
-                  </th>
-                  <td data-testid={`triangle-probability-${index}`}>{formatShare(appliedProbabilities[index])}</td>
-                  <td data-testid={`triangle-count-${index}`}>{formatInteger(snapshot.counts[index])}</td>
-                  <td data-testid={`triangle-frequency-${index}`}>
-                    {snapshot.steps === 0 ? 'нет данных' : formatShare(snapshot.counts[index] / snapshot.steps)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <th scope="row">Всего</th>
-                <td>100,0&nbsp;%</td>
-                <td data-testid="triangle-count-total">
-                  {formatInteger(snapshot.counts[0] + snapshot.counts[1] + snapshot.counts[2])}
-                </td>
-                <td>{snapshot.steps === 0 ? 'нет данных' : '100,0 %'}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <fieldset className="settings">
-          <legend>Вероятности вершин</legend>
-          <div className="segmented-options">
-            {PRESETS.map((preset) => (
-              <button
-                key={preset.label}
-                className="chip"
-                type="button"
-                aria-pressed={preset.draft.every((value, index) => value === draft[index])}
-                onClick={() => setDraft([...preset.draft])}
-              >
-                {preset.label}
+              <button className="btn btn--primary" type="button" disabled={running} onClick={() => setRunning(true)}>
+                {snapshot.steps > 0 ? 'Продолжить' : 'Запустить'}
               </button>
-            ))}
-          </div>
-          <div className="weights">
-            {VERTEX_INDEXES.map((index) => (
-              <div className="weight" key={index}>
-                <label htmlFor={`weight-${index}`} className={`vertex-${index}`}>
-                  Вес {VERTEX_NAMES[index]}
-                </label>
-                <input
-                  id={`weight-${index}`}
-                  className="input"
-                  type="text"
-                  inputMode="decimal"
-                  autoComplete="off"
-                  value={draft[index]}
-                  aria-invalid={!parsed.ok}
-                  onChange={(event) => {
-                    const next: Draft = [...draft];
-                    next[index] = event.target.value;
-                    setDraft(next);
-                  }}
-                />
-                <output data-testid={`draft-probability-${index}`}>
-                  {draftProbabilities ? formatShare(draftProbabilities[index]) : 'нет значения'}
-                </output>
+              <button className="btn" type="button" disabled={!running} onClick={() => setRunning(false)}>
+                Пауза
+              </button>
+              <button className="btn btn--quiet" type="button" onClick={newRun}>
+                Сбросить
+              </button>
+            </div>
+            <Readouts items={[{ label: 'Шаги', value: formatInteger(snapshot.steps), tone: 'amber', testId: 'triangle-steps' }]} />
+            <Segmented
+              legend="Скорость построения"
+              options={SPEEDS.map((option, index) => ({ value: index, label: option.label }))}
+              value={speedIndex}
+              onChange={setSpeedIndex}
+            />
+            <RangeField
+              id="chaos-fraction"
+              label="Доля пути до вершины t"
+              value={fraction}
+              min={0.1}
+              max={0.9}
+              step={0.01}
+              onChange={changeFraction}
+              display={formatStatistic(fraction)}
+              marks={[{ value: 0.5, label: '0,5 — классика' }]}
+            />
+    
+            <fieldset className="settings">
+              <legend>Веса вершин</legend>
+              <div className="segmented-options">
+                {PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    className="chip"
+                    type="button"
+                    aria-pressed={preset.draft.every((value, index) => value === draft[index])}
+                    onClick={() => setDraft([...preset.draft])}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-          {!parsed.ok ? (
-            <p className="hint hint--error" role="alert">
-              {parsed.error}
-            </p>
-          ) : isDirty ? (
-            <p className="hint">Новые вероятности начнут действовать после применения.</p>
-          ) : null}
-          <button
-            className={parsed.ok && isDirty ? 'btn btn--primary' : 'btn'}
-            type="button"
-            disabled={!parsed.ok}
-            onClick={applySettings}
-          >
-            Применить и начать новый опыт
-          </button>
-        </fieldset>
+              <div className="weights">
+                {VERTEX_INDEXES.map((index) => (
+                  <div className="weight" key={index}>
+                    <label htmlFor={`weight-${index}`} className={`vertex-${index}`}>
+                      Вес {VERTEX_NAMES[index]}
+                    </label>
+                    <input
+                      id={`weight-${index}`}
+                      className="input"
+                      type="text"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      value={draft[index]}
+                      aria-invalid={!parsed.ok}
+                      onChange={(event) => {
+                        const next: Draft = [...draft];
+                        next[index] = event.target.value;
+                        setDraft(next);
+                      }}
+                    />
+                    <output data-testid={`draft-probability-${index}`}>
+                      {draftProbabilities ? formatShare(draftProbabilities[index]) : 'нет значения'}
+                    </output>
+                  </div>
+                ))}
+              </div>
+              {!parsed.ok ? (
+                <p className="hint hint--error" role="alert">
+                  {parsed.error}
+                </p>
+              ) : isDirty ? (
+                <p className="hint">Новые веса начнут действовать после применения.</p>
+              ) : null}
+              <button className={parsed.ok && isDirty ? 'btn btn--primary' : 'btn'} type="button" disabled={!parsed.ok} onClick={applySettings}>
+                Применить и начать новый опыт
+              </button>
+            </fieldset>
+            <details className="more">
+              <summary>Таблицы частот и сохранение PNG</summary>
+              <button className="btn" type="button" disabled={snapshot.steps === 0} onClick={() => exportPng(canvasRef.current, `${name}, ${formatInteger(snapshot.steps)} шагов`)}>
+                Сохранить PNG
+              </button>
+                <div className="table-scroll">
+                <table className="data-table">
+                  <caption>Вершины в текущем опыте</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Вершина</th>
+                      <th scope="col">Вероятность</th>
+                      <th scope="col">Выборы</th>
+                      <th scope="col">Частота</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {VERTEX_INDEXES.map((index) => (
+                      <tr key={index}>
+                        <th scope="row" className={`vertex-${index}`}>
+                          {VERTEX_NAMES[index]}
+                        </th>
+                        <td data-testid={`triangle-probability-${index}`}>{formatShare(appliedProbabilities[index])}</td>
+                        <td data-testid={`triangle-count-${index}`}>{formatInteger(snapshot.counts[index])}</td>
+                        <td data-testid={`triangle-frequency-${index}`}>
+                          {snapshot.steps === 0 ? 'нет данных' : formatShare(snapshot.counts[index] / snapshot.steps)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+  
+              <div className="table-scroll">
+                <table className="data-table" data-testid="triangle-checkpoints">
+                  <caption>Зафиксировано автоматически</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">После шагов</th>
+                      {VERTEX_INDEXES.map((index) => (
+                        <th scope="col" key={index}>
+                          {VERTEX_NAMES[index]}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {CHECKPOINTS.map((step) => {
+                      const counts = snapshot.checkpoints[step];
+                      return (
+                        <tr key={step}>
+                          <th scope="row">{formatInteger(step)}</th>
+                          {VERTEX_INDEXES.map((index) => (
+                            <td key={index}>{counts ? `${counts[index]} (${formatShare(counts[index] / step)})` : '—'}</td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+  
+              </details>
+
+            <RunControls seed={seed} onRepeat={() => startExperiment(applied, fraction, seed)} onNew={newRun} />
+          </>
+        )}
       </div>
 
       <div className="notes">
         <section className="explain">
           <h3>Что показывает узор</h3>
-          <p data-testid="triangle-note">{describePattern(applied)}</p>
-          <div className="compare">
-            <ComparisonCanvas weights={EQUAL_WEIGHTS} title="Равные шансы" caption="Все три части заполнены одинаково плотно" />
-            <ComparisonCanvas weights={SKEWED_WEIGHTS} title="60/30/10" caption="Часть у вершины A плотнее, часть у C реже" />
-          </div>
-          <p className="hint">Каждый образец построен случайно за 40 000 шагов при открытии страницы.</p>
+          <p data-testid="triangle-note">{describePattern(applied, fraction)}</p>
+          <p className="hint">
+            Сравните два рисунка в режиме «Сравнить два»: у них общий seed, поэтому разница вызвана только весами. Пресет
+            60/30/10 — это те же доли, что и {SKEWED_WEIGHTS.join(':')}.
+          </p>
         </section>
 
         <Reveal
@@ -381,14 +617,13 @@ export function SierpinskiTriangle({ active }: { active: boolean }) {
           lockedHint="Ответ откроется после запуска опыта."
         >
           <p>
-            Нет. 10 раз это среднее значение, а не обязательный результат. Каждый шаг случаен, поэтому число выпадений
-            меняется от опыта к опыту. Ровно 10 выпадений случаются примерно в 15,3&nbsp;% опытов, а от 7 до 13 выпадений
-            примерно в 82,6&nbsp;%.
+            Нет. 10 раз это среднее значение, а не обязательный результат. Ровно 10 выпадений случаются примерно в 15,3&nbsp;%
+            опытов, а от 7 до 13 выпадений примерно в 82,6&nbsp;%.
           </p>
           {snapshot.countsAtThirty && applied[0] === applied[1] && applied[1] === applied[2] ? (
             <p data-testid="triangle-thirty">
-              В этом опыте за первые 30 шагов: A выпала {snapshot.countsAtThirty[0]}, B выпала {snapshot.countsAtThirty[1]},
-              C выпала {snapshot.countsAtThirty[2]}.
+              В этом опыте за первые 30 шагов: A выпала {snapshot.countsAtThirty[0]}, B выпала {snapshot.countsAtThirty[1]}, C выпала{' '}
+              {snapshot.countsAtThirty[2]}.
             </p>
           ) : null}
         </Reveal>

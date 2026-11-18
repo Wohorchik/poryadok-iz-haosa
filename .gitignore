@@ -4,3 +4,7 @@ coverage/
 *.log
 .DS_Store
 Thumbs.db
+
+# Личные настройки Claude Code и хук перезапуска dev-сервера
+.claude/settings.local.json
+.claude/hooks/

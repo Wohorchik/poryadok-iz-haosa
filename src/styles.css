@@ -398,8 +398,13 @@ svg {
   gap: var(--space-2);
 }
 
-.actions--four {
+.actions--four,
+.actions--two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.actions + .actions {
+  margin-top: -8px;
 }
 
 .field,
@@ -783,6 +788,522 @@ svg {
   font-weight: 700;
 }
 
+/* Характеристики выборки */
+
+.stats-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.stats-panel > h3,
+.series-head h3 {
+  font-family: var(--display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-table caption {
+  margin-bottom: var(--space-2);
+  font-weight: 650;
+  text-align: left;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--rule);
+  text-align: right;
+  vertical-align: baseline;
+}
+
+.stats-table th:first-child {
+  padding-left: 0;
+  text-align: left;
+}
+
+.stats-table td:last-child,
+.stats-table th:last-child {
+  padding-right: 0;
+}
+
+.stats-table thead th {
+  color: var(--mist);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.stats-table tbody th {
+  font-weight: 500;
+}
+
+.stats-table tbody td {
+  font-weight: 700;
+}
+
+.compare-current th,
+.compare-current td {
+  background: var(--harbor);
+}
+
+.compare-current th:first-child {
+  padding-left: var(--space-2);
+}
+
+.compare-clear {
+  align-self: flex-start;
+}
+
+.series-reset {
+  grid-column: 1 / -1;
+}
+
+/* Серия опытов со скрытой картинкой */
+
+.series-head {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 72ch;
+  padding-top: var(--space-5);
+  border-top: 2px solid var(--rule);
+}
+
+.series-head p {
+  color: var(--mist);
+}
+
+.series-main,
+.series-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.series-side .status {
+  min-height: 0;
+  margin-top: 0;
+}
+
+.series-chart {
+  min-width: 0;
+}
+
+.series-plot {
+  margin-top: var(--space-4);
+}
+
+.series-axis-title {
+  color: var(--mist);
+  font-size: var(--text-sm);
+}
+
+.series-axis-title--x {
+  margin-left: var(--axis-width);
+  text-align: center;
+}
+
+.series-x {
+  display: grid;
+  grid-template-columns: repeat(var(--bins), minmax(0, 1fr));
+  margin: var(--space-1) 0 var(--space-1) var(--axis-width);
+  color: var(--mist);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.series-x span {
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.series-bar {
+  left: 8%;
+  right: 8%;
+}
+
+.series-theory {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 3px dashed var(--water);
+  transform: translateX(-1.5px);
+  pointer-events: none;
+}
+
+.series-theory-label {
+  position: absolute;
+  top: 0;
+  left: var(--space-1);
+  padding-inline: 2px;
+  background: var(--night);
+  color: var(--water);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.legend-theory.legend-theory--vertical::before {
+  width: 0;
+  height: 16px;
+  border-top: 0;
+  border-left: 3px dashed var(--water);
+}
+
+/* Учебное исследование */
+
+.study {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-6) var(--space-7);
+}
+
+.study-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.study-head h2 {
+  font-family: var(--display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.study-head p {
+  max-width: 72ch;
+  color: var(--mist);
+}
+
+.study h3 {
+  font-family: var(--display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.study h4 {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.study code {
+  font-family: var(--body);
+  font-weight: 700;
+  color: var(--lamp);
+}
+
+.study-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--harbor);
+  border-radius: 4px;
+}
+
+.study-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.study-step {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  color: var(--mist);
+  font-size: var(--text-sm);
+}
+
+.study-step::before {
+  counter-increment: step;
+  content: counter(step) '. ';
+}
+
+.study-step--done {
+  border-color: var(--water);
+  color: var(--water);
+}
+
+.study-step--now {
+  border-color: var(--lamp);
+  background: var(--lamp);
+  color: var(--deep);
+  font-weight: 700;
+}
+
+.study-start,
+.quiz,
+.lesson,
+.results,
+.teacher {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.study-start .field {
+  max-width: 320px;
+}
+
+.teacher {
+  padding: var(--space-4);
+  border: 2px solid var(--water);
+  border-radius: 4px;
+}
+
+.quiz-question {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4) 0 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.quiz-question legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.quiz-number {
+  color: var(--lamp);
+}
+
+.quiz-samples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  font-size: var(--text-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+.quiz-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.quiz-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: var(--control-height);
+  padding: var(--space-3);
+  background: var(--harbor);
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.quiz-option:hover {
+  background: var(--harbor-raised);
+}
+
+.quiz-option:has(input:checked) {
+  border-color: var(--lamp);
+}
+
+.quiz-option input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--lamp);
+}
+
+.quiz-submit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.lesson-timer {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper);
+  border-radius: 4px;
+  color: var(--deep);
+}
+
+.lesson-tables {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.lesson-observations td,
+.lesson-frequencies td,
+.lesson-frequencies thead th {
+  text-align: center;
+}
+
+.lesson-observations tbody th,
+.lesson-frequencies tbody th {
+  font-family: var(--body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--mist);
+}
+
+.lesson-board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 2px solid var(--lamp);
+  border-radius: 4px;
+}
+
+.lesson-board-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.lesson-board .status {
+  min-height: 0;
+  margin: 0;
+}
+
+.lesson-board .ball-trail {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: trail-draw 1.1s ease-out forwards;
+}
+
+@keyframes trail-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.lesson-chart {
+  margin-top: var(--space-5);
+}
+
+.chart-bar.lesson-bar {
+  background: var(--rule-strong);
+}
+
+.chart-bar.lesson-bar--current {
+  background: var(--lamp);
+}
+
+.study .reveal-question {
+  font-family: var(--body);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.lesson-bar-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.lesson-points {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-5);
+}
+
+.lesson-points section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-left: var(--space-3);
+  border-left: 4px solid var(--water);
+}
+
+.results-score {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-7);
+}
+
+.results-score p {
+  display: flex;
+  flex-direction: column;
+}
+
+.results-label {
+  color: var(--mist);
+}
+
+.results-score strong {
+  font-family: var(--display);
+  font-size: var(--readout-size);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--lamp);
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-left: var(--space-5);
+}
+
+.review-item {
+  padding-left: var(--space-3);
+  border-left: 4px solid var(--buoy);
+}
+
+.review-item--right {
+  border-left-color: var(--water);
+}
+
+.review-question {
+  font-weight: 650;
+}
+
+.review-samples {
+  color: var(--lamp);
+  font-weight: 700;
+}
+
 /* Доска Гальтона */
 
 .experiment--galton {
@@ -799,13 +1320,24 @@ svg {
 }
 
 .board-wrap {
+  position: relative;
   margin-left: var(--axis-width);
   background: var(--deep);
 }
 
 .board {
+  display: block;
   width: 100%;
   height: auto;
+}
+
+.board-balls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 900 / 400;
+  pointer-events: none;
 }
 
 .peg {
@@ -1179,80 +1711,47 @@ svg {
     font-size: var(--text-xl);
   }
 
-  /* На телефоне кнопки запуска стоят сразу под визуализацией. */
-  .experiment--picture,
-  .experiment--galton,
-  .app--projector .experiment--picture,
-  .app--projector .experiment--galton {
-    display: flex;
-    flex-direction: column;
+  .study {
+    padding-inline: var(--space-4);
   }
 
-  .experiment--picture .side-column,
-  .experiment--galton .side-column {
-    display: contents;
+  .study-head h2 {
+    font-size: var(--text-2xl);
   }
 
-  .experiment--picture .field {
-    order: 1;
+  .quiz-options,
+  .lesson-points {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .experiment--picture .field .hint:not(.hint--error) {
-    display: none;
+  .results-score strong {
+    font-size: 3rem;
   }
 
-  .experiment--picture .viz-column {
-    order: 2;
+  .compare-table th,
+  .compare-table td {
+    padding-inline: var(--space-1);
+    font-size: var(--text-sm);
   }
 
-  .experiment--picture .actions,
-  .experiment--picture .verdict,
-  .experiment--picture .side-column > .hint {
-    order: 3;
+  .compare-table thead th {
+    white-space: normal;
+    vertical-align: bottom;
   }
 
-  .experiment--picture .readouts {
-    order: 4;
+  .compare-table tbody th {
+    font-size: var(--text-md);
   }
 
-  .experiment--picture .balance {
-    order: 5;
+  .stats-table th,
+  .stats-table td {
+    padding-inline: var(--space-1);
+    font-size: var(--text-sm);
   }
 
-  .experiment--picture .explain {
-    order: 6;
-  }
-
-  .experiment--galton .viz-column {
-    order: 1;
-  }
-
-  .experiment--galton .actions {
-    order: 2;
-  }
-
-  .experiment--galton .readouts {
-    order: 3;
-  }
-
-  .experiment--galton .balance {
-    order: 4;
-  }
-
-  .experiment--galton .side-column > .status {
-    order: 5;
-  }
-
-  .experiment--galton .field {
-    order: 6;
-  }
-
-  .experiment--galton .bin-tables {
-    order: 7;
-  }
-
-  .experiment--galton .reveal {
-    order: 8;
+  .series-x,
+  .series-theory-label {
+    font-size: 0.75rem;
   }
 
   .peg {
@@ -1360,9 +1859,1451 @@ svg {
     animation: none;
   }
 
+  .lesson-board .ball-trail {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+
   .cover,
   .chart-bar,
   .chart-theory {
     transition: none;
   }
+}
+
+/* ================= Лаборатория: общие элементы ================= */
+
+.tab-short,
+.module-select {
+  display: none;
+}
+
+.module-select select {
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-2) var(--space-3);
+  background: var(--harbor);
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  color: var(--paper);
+  font: inherit;
+  font-weight: 650;
+}
+
+.tabs {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tab {
+  flex: none;
+  white-space: nowrap;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--mist);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.check input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--lamp);
+}
+
+.bin-info {
+  min-height: 1.5em;
+  margin: var(--space-2) 0;
+  color: var(--mist);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-toolbar,
+.picture-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  margin: var(--space-3) 0;
+}
+
+.galton-status {
+  min-height: 1.5em;
+  margin-top: var(--space-2);
+}
+
+details.more {
+  border-top: 1px solid var(--rule);
+  padding-top: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+details.more summary {
+  min-height: 32px;
+  color: var(--paper);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.more-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 72ch;
+  margin-top: var(--space-3);
+}
+
+.run-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+}
+
+.run-seed {
+  font-variant-numeric: tabular-nums;
+  color: var(--paper);
+}
+
+.range-field label output {
+  color: var(--lamp);
+  font-weight: 700;
+}
+
+.range-marks {
+  position: relative;
+  height: 1.4em;
+  font-size: var(--text-sm);
+  color: var(--water);
+}
+
+.range-marks span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.range-marks span::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 2px;
+  height: 8px;
+  background: var(--water);
+}
+
+/* Линейный график */
+
+.line-chart {
+  margin-top: var(--space-5);
+}
+
+.line-chart-body {
+  display: grid;
+  grid-template-columns: var(--axis-width) minmax(0, 1fr);
+  grid-template-rows: var(--line-chart-height, 200px) auto;
+}
+
+.line-chart-plot {
+  position: relative;
+  border-bottom: 2px solid var(--rule-strong);
+  border-left: 1px solid var(--rule);
+}
+
+.line-chart-plot svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.line-chart-x {
+  position: relative;
+  grid-column: 2;
+  height: 1.6em;
+  color: var(--mist);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.line-chart-x span {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.line-series {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.line-series--dashed {
+  stroke-dasharray: 8 6;
+}
+
+.line-dots {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+.series-amber {
+  stroke: var(--lamp);
+  color: var(--lamp);
+}
+
+.series-cyan {
+  stroke: var(--water);
+  color: var(--water);
+}
+
+.series-coral {
+  stroke: var(--buoy);
+  color: var(--buoy);
+}
+
+.series-mist {
+  stroke: var(--rule-strong);
+  color: var(--rule-strong);
+}
+
+.line-legend {
+  margin-left: var(--axis-width);
+}
+
+.legend-line {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.legend-line::before {
+  content: '';
+  width: 22px;
+  border-top: 3px solid currentColor;
+}
+
+.legend-line--dashed::before {
+  border-top-style: dashed;
+}
+
+.legend-line--dots::before {
+  width: 8px;
+  height: 8px;
+  border: 0;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Столбчатая диаграмма с выбором столбца */
+
+.bar-chart .chart {
+  margin-top: var(--space-4);
+}
+
+.chart-column--button {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.chart-column--button:hover {
+  background: rgb(255 255 255 / 0.05);
+}
+
+.chart-column--selected {
+  background: rgb(98 220 235 / 0.12);
+  box-shadow: inset 0 0 0 2px var(--water);
+}
+
+.chart-bar--highlight {
+  background: var(--buoy);
+}
+
+.board-selected {
+  fill: rgb(98 220 235 / 0.18);
+  stroke: var(--water);
+  stroke-width: 2;
+}
+
+/* Скрытая картинка */
+
+.experiment--picture {
+  grid-template-areas:
+    'head head'
+    'viz side'
+    'notes notes'
+    'series series';
+}
+
+.experiment--picture .series {
+  grid-area: series;
+}
+
+.picture-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+
+.heat-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.heat-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.heat-legend i {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--rule);
+}
+
+/* Треугольник */
+
+.pattern-name {
+  margin-bottom: var(--space-2);
+  font-family: var(--display);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--lamp);
+}
+
+.color-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--mist);
+}
+
+.gradient-bar {
+  display: inline-block;
+  width: 160px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.triangle-vertex-pick {
+  fill: none;
+  stroke: var(--water);
+  stroke-width: 3;
+}
+
+.triangle-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+span.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot--previous {
+  background: var(--rule-strong);
+}
+
+.dot--vertex {
+  border: 2px solid var(--water);
+}
+
+.dot--current {
+  background: var(--lamp);
+}
+
+.compare-mode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.compare-item figcaption {
+  gap: var(--space-1);
+}
+
+.weights--compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.weights--compact label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 700;
+}
+
+.weights--compact .input--short {
+  width: 64px;
+  min-height: 40px;
+}
+
+/* От шума к изображению */
+
+.noise-row {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.noise-image {
+  position: relative;
+  aspect-ratio: 1;
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+
+.noise-image canvas,
+.noise-image svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.noise-image canvas {
+  image-rendering: pixelated;
+}
+
+.noise-item figcaption {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 650;
+}
+
+.noise-pick {
+  fill: none;
+  stroke: var(--buoy);
+  stroke-width: 0.6;
+}
+
+.noise-pick-outer {
+  fill: none;
+  stroke: var(--water);
+  stroke-width: 0.5;
+}
+
+/* Нарисуй распределение */
+
+.experiment--draw .viz-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.dot-plot {
+  width: 100%;
+  touch-action: none;
+  user-select: none;
+}
+
+.dot-plot figcaption {
+  font-weight: 650;
+}
+
+.dot-plot svg {
+  display: block;
+  background: var(--deep);
+}
+
+.dot-hit {
+  fill: transparent;
+  cursor: copy;
+}
+
+.dot-axis,
+.dot-tick line {
+  stroke: var(--rule-strong);
+  stroke-width: 2;
+}
+
+.dot-tick text {
+  fill: var(--mist);
+  font-size: 12px;
+}
+
+circle.dot {
+  fill: var(--paper);
+  stroke: var(--deep);
+  stroke-width: 1.5;
+  cursor: grab;
+}
+
+circle.dot--selected {
+  fill: var(--buoy);
+  stroke: var(--paper);
+  stroke-width: 2;
+}
+
+.marker line {
+  stroke-width: 2.5;
+}
+
+.marker text {
+  font-size: 13px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--deep);
+  stroke-width: 4px;
+}
+
+.marker--mean line {
+  stroke: var(--lamp);
+}
+
+.marker--mean text {
+  fill: var(--lamp);
+}
+
+.marker--median line {
+  stroke: var(--water);
+  stroke-dasharray: 6 4;
+}
+
+.marker--median text {
+  fill: var(--water);
+}
+
+.field-label {
+  font-weight: 650;
+}
+
+/* Случайное блуждание */
+
+.walk-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(120px, 1fr);
+  gap: var(--space-3);
+}
+
+.walk-canvas,
+.walk-dist {
+  min-width: 0;
+}
+
+.walk-canvas canvas {
+  display: block;
+  background: var(--deep);
+}
+
+.walk-bars {
+  position: relative;
+  border-left: 2px solid var(--rule-strong);
+}
+
+.walk-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 14px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.walk-bar span {
+  display: block;
+  height: 10px;
+  min-width: 1px;
+  background: var(--rule-strong);
+}
+
+.walk-bar em {
+  color: var(--mist);
+  font-size: 0.7rem;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.walk-bar:hover span {
+  background: var(--paper);
+}
+
+.walk-bar--selected span {
+  background: var(--lamp);
+}
+
+.walk-bar--selected em {
+  color: var(--lamp);
+  font-weight: 700;
+}
+
+.walk-board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Навигация и раскладка на средних и узких экранах */
+
+@media (max-width: 1679px) {
+  .tab-long {
+    display: none;
+  }
+
+  .tab-short {
+    display: inline;
+  }
+
+  .tab {
+    padding-inline: var(--space-3);
+  }
+}
+
+@media (max-width: 1023px) {
+  .tabs {
+    display: none;
+  }
+
+  .module-select {
+    display: block;
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .experiment--picture,
+  .app--projector .experiment--picture {
+    grid-template-areas:
+      'head'
+      'viz'
+      'side'
+      'notes'
+      'series';
+  }
+
+  .walk-layout {
+    grid-template-columns: minmax(0, 1fr) 96px;
+  }
+}
+
+@media (max-width: 639px) {
+  .line-chart-body {
+    grid-template-rows: 170px auto;
+  }
+
+  .line-chart-x {
+    font-size: 0.7rem;
+  }
+
+  .noise-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .walk-layout {
+    grid-template-columns: minmax(0, 1fr) 72px;
+  }
+}
+
+.line-chart > .series-axis-title:first-child {
+  margin-bottom: var(--space-3);
+}
+
+.walk-canvas > .series-axis-title:first-child,
+.walk-dist > .series-axis-title:first-child {
+  min-height: 1.6em;
+  margin: 0;
+}
+
+.walk-dist > .series-axis-title:first-child {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ================= Навигатор экспериментов ================= */
+
+.topbar {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.brand a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.topnav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.nav-button[aria-current='page'] {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--deep);
+}
+
+.nav-button--quiet {
+  background: transparent;
+}
+
+.crumbs {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-6) 0;
+}
+
+.link-button {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--water);
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--paper);
+}
+
+/* Состояния: активный — заливка и галочка, наведение — подсветка фона, фокус — пунктирная рамка. */
+:focus-visible {
+  outline: 3px dashed var(--paper);
+  outline-offset: 3px;
+}
+
+.chip[aria-pressed='true']::before {
+  content: '✓ ';
+  font-weight: 800;
+}
+
+.action-line {
+  margin-top: var(--space-2);
+  color: var(--paper) !important;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.app--projector .experiment-head p.action-line {
+  display: block;
+}
+
+/* Галерея */
+
+.gallery {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-6) var(--space-7);
+}
+
+.gallery h2 {
+  font-family: var(--display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.gallery-lead {
+  margin-top: var(--space-2);
+  color: var(--mist);
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gallery-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  height: 100%;
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  background: var(--harbor);
+  border: 2px solid var(--rule);
+  border-radius: 6px;
+  color: var(--paper);
+  text-align: left;
+  cursor: pointer;
+}
+
+.gallery-card:hover {
+  border-color: var(--lamp);
+  background: var(--harbor-raised);
+}
+
+.gallery-preview {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: var(--deep);
+  border-radius: 4px;
+}
+
+.gallery-preview svg,
+.gallery-preview canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.gallery-title {
+  font-family: var(--display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.gallery-hint {
+  color: var(--mist);
+}
+
+.gallery-footer {
+  margin-top: var(--space-6);
+  color: var(--mist);
+}
+
+.preview-peg {
+  fill: var(--rule-strong);
+}
+
+.preview-trail {
+  fill: none;
+  stroke: var(--lamp);
+  stroke-width: 2;
+}
+
+.preview-faint {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-width: 0.8;
+  opacity: 0.45;
+}
+
+.preview-bar {
+  fill: var(--lamp);
+}
+
+.preview-axis {
+  stroke: var(--rule-strong);
+  stroke-width: 1.5;
+}
+
+.preview-dot {
+  fill: var(--paper);
+}
+
+.preview-dot--moved {
+  stroke: var(--lamp);
+  stroke-width: 2;
+}
+
+.preview-arrow {
+  fill: none;
+  stroke: var(--lamp);
+  stroke-width: 2;
+}
+
+.preview-mean {
+  fill: var(--water);
+}
+
+.preview-median {
+  fill: var(--lamp);
+}
+
+.preview-label {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.preview-label--mean {
+  fill: var(--water);
+}
+
+.preview-label--median {
+  fill: var(--lamp);
+}
+
+/* Как одна точка меняет среднее */
+
+.experiment--mean .viz-column,
+.experiment--silhouette .viz-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.number-line figcaption {
+  margin-bottom: var(--space-1);
+  font-weight: 650;
+}
+
+.number-line svg {
+  display: block;
+  background: var(--deep);
+  border-radius: 4px;
+  touch-action: none;
+  user-select: none;
+}
+
+.line-hit {
+  fill: transparent;
+}
+
+.line-hit--add {
+  cursor: copy;
+}
+
+.line-axis {
+  stroke: var(--rule-strong);
+  stroke-width: 2;
+}
+
+.line-tick line {
+  stroke: var(--rule-strong);
+  stroke-width: 1.5;
+}
+
+.line-tick text {
+  fill: var(--mist);
+  font-size: 12px;
+}
+
+.line-dot {
+  fill: var(--paper);
+  stroke: var(--deep);
+  stroke-width: 2;
+  cursor: grab;
+  outline: none;
+}
+
+.line-dot:active {
+  cursor: grabbing;
+}
+
+.line-dot--selected,
+.line-dot:focus-visible {
+  stroke: var(--lamp);
+  stroke-width: 3.5;
+}
+
+.mark-mean path {
+  fill: var(--water);
+}
+
+.mark-mean line {
+  stroke: var(--water);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}
+
+.mark-median path {
+  fill: var(--lamp);
+}
+
+.mark-median line {
+  stroke: var(--lamp);
+  stroke-width: 2;
+}
+
+.mark-mean text,
+.mark-median text {
+  font-size: 14px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: var(--deep);
+  stroke-width: 4px;
+}
+
+.mark-mean text {
+  fill: var(--water);
+}
+
+.mark-median text {
+  fill: var(--lamp);
+}
+
+.drag-hint circle {
+  fill: none;
+  stroke: var(--lamp);
+  stroke-width: 3;
+  animation: hint-pulse 1.4s ease-in-out infinite;
+}
+
+.drag-hint path {
+  fill: none;
+  stroke: var(--lamp);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.drag-hint text {
+  fill: var(--lamp);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@keyframes hint-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.mean-result {
+  font-family: var(--display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.mean-result-mean {
+  color: var(--water);
+}
+
+.mean-result-median {
+  color: var(--lamp);
+}
+
+.explain-box {
+  padding: var(--space-3) var(--space-4);
+  background: var(--harbor);
+  border-left: 4px solid var(--water);
+  border-radius: 4px;
+}
+
+.same-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Нарисуй силуэт точками */
+
+.silhouette-canvas canvas {
+  display: block;
+  width: min(100%, 560px);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  touch-action: none;
+}
+
+.silhouette-draw {
+  cursor: crosshair;
+}
+
+.legend-swatch--in {
+  color: var(--lamp);
+}
+
+.legend-swatch--out {
+  color: #6f8dbf;
+}
+
+.legend-swatch--mask {
+  color: var(--water);
+}
+
+.noise-charts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+@media (max-width: 1023px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topnav {
+    justify-content: flex-start;
+  }
+
+  .crumbs {
+    padding-inline: var(--space-4);
+  }
+
+  .gallery {
+    padding-inline: var(--space-4);
+  }
+}
+
+@media (max-width: 639px) {
+  .topbar {
+    gap: var(--space-2);
+  }
+
+  .topnav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .nav-button,
+  .topnav .projector-button {
+    min-height: 44px;
+    padding-inline: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  .gallery h2 {
+    font-size: var(--text-2xl);
+  }
+
+  .mean-result {
+    font-size: var(--text-xl);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drag-hint circle {
+    animation: none;
+  }
+}
+
+.brand a {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.28em;
+}
+
+.gallery-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+}
+
+/* ================= Раскладка опытов: две колонки независимой высоты ================= */
+/*
+ * Раньше у колонок были общие строки сетки ('viz side' / 'notes notes'): высокая боковая панель
+ * растягивала строку и оставляла пустоту под визуализацией. Теперь боковая колонка занимает
+ * обе строки, а блоки в каждой колонке идут подряд с отступом 16 px.
+ */
+
+.experiment {
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
+  grid-template-rows: auto auto 1fr;
+  grid-template-areas:
+    'head head'
+    'viz side'
+    'notes side';
+  align-items: start;
+  gap: 16px var(--space-6);
+}
+
+.experiment--galton {
+  grid-template-areas:
+    'head head'
+    'viz side'
+    'tables side';
+}
+
+.experiment--picture {
+  grid-template-rows: auto auto 1fr auto;
+  grid-template-areas:
+    'head head'
+    'viz side'
+    'notes side'
+    'series series';
+}
+
+.viz-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.side-column {
+  gap: 16px;
+}
+
+.notes,
+.bin-tables {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  min-width: 0;
+}
+
+.series.notes {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
+  gap: 16px var(--space-6);
+}
+
+.viz-pin {
+  position: static;
+}
+
+.status {
+  min-height: 0;
+  margin-top: 0;
+}
+
+.side-column > details.more,
+.side-column > .run-controls {
+  margin-top: 0;
+}
+
+details.more + details.more {
+  margin-top: -4px;
+}
+
+.stats-panel {
+  margin-top: 0;
+}
+
+/* Визуальная группа: опыт и всё, что меняется при взаимодействии с ним */
+
+.viz-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: rgb(7 21 48 / 0.55);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+
+.viz-group .chart-toolbar {
+  margin: 0;
+}
+
+.viz-group .bin-info,
+.viz-group .chart-legend {
+  margin: 0;
+}
+
+/* Графики — отдельные панели */
+
+.line-chart,
+.series-chart,
+.number-line,
+.own-histogram .bar-chart {
+  margin: 0;
+  padding: 12px 14px 10px;
+  background: var(--deep);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+
+.viz-group .bar-chart {
+  margin: 0;
+}
+
+.chart-line {
+  border-top-color: rgb(52 80 127 / 0.45);
+}
+
+.line-legend {
+  margin-left: 0;
+}
+
+.bar-chart .chart,
+.series-plot {
+  margin-top: 8px;
+}
+
+/* Доска Гальтона: ожидание — бирюзовый контурный столбец поверх жёлтого факта */
+
+.chart-theory-column {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: 0;
+  border: 2px solid var(--water);
+  border-bottom: 0;
+  pointer-events: none;
+  transition: height 160ms ease-out;
+}
+
+.chart-theory-column .chart-theory-label {
+  bottom: 100%;
+  top: auto;
+}
+
+.legend-theory--outline::before {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--water);
+  border-top-width: 2px;
+  background: transparent;
+}
+
+.chart-column--selected .chart-bar {
+  box-shadow: 0 0 0 2px var(--paper);
+}
+
+/* Силуэт: одна главная цифра — оценка площади */
+
+.estimate-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--harbor);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+
+.estimate-value {
+  font-family: var(--display);
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--water);
+  font-variant-numeric: tabular-nums;
+}
+
+.estimate-value--empty {
+  font-family: var(--body);
+  font-size: var(--text-xl);
+  color: var(--mist);
+}
+
+.estimate-label {
+  color: var(--mist);
+  font-weight: 650;
+}
+
+.estimate-line {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.estimate-number {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.silhouette-legend {
+  margin: 8px 0 0;
+}
+
+/* Шум: выбранный пиксель сразу под картинками */
+
+.pixel-row {
+  font-variant-numeric: tabular-nums;
+}
+
+.noise-pixel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Блуждание */
+
+.walk-status {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.walk-pick select {
+  flex: 1;
+  min-width: 0;
+}
+
+.seed-form {
+  margin-top: 8px;
+}
+
+.seed-form .input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Узкий экран: визуализация → основные кнопки → результат и графики → подробности */
+
+@media (max-width: 1023px) {
+  .experiment,
+  .app--projector .experiment,
+  .experiment--galton,
+  .experiment--picture,
+  .app--projector .experiment--galton,
+  .app--projector .experiment--picture {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .experiment > .viz-column {
+    display: contents;
+  }
+
+  .experiment > .experiment-head {
+    order: 0;
+  }
+
+  .experiment > .viz-column > * {
+    order: 1;
+  }
+
+  .experiment > .viz-column > .viz-secondary {
+    order: 3;
+  }
+
+  .experiment > .side-column {
+    order: 2;
+  }
+
+  .experiment > .notes,
+  .experiment > .bin-tables {
+    order: 4;
+  }
+
+  .experiment > .series {
+    order: 5;
+  }
+
+  .series.notes {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.series-paper {
+  stroke: var(--paper);
+  color: var(--paper);
 }
