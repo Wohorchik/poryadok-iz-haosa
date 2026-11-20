@@ -1,3 +1,5 @@
+import { SpatialView } from '../components/SpatialPlot';
+import { noiseScene } from '../lib/experimentScenes';
 import { useEffect, useRef, useState } from 'react';
 import { LineChart, RangeField, RunControls, Segmented } from '../components/Charts';
 import { Readouts } from '../components/Readouts';
@@ -160,12 +162,16 @@ export function NoiseImage({ active }: { active: boolean }) {
 
       <div className="viz-column">
         <div className="viz-group">
+          <SpatialView title="Рельеф яркости" label="Рельефы кадра и среднего изображения" active={active}
+            caption="Чем ярче пиксель, тем выше поверхность. Шкала яркости общая, от 0 до 255. Выбрать пиксель можно в 2D."
+            build={() => noiseScene(series, true, showSource, selected)}>
           <div className="noise-row" style={{ gridTemplateColumns: `repeat(${showSource ? 3 : 2}, minmax(0, 1fr))` }}>
             <GrayImage rgba={frameRgba} title={`Последний кадр № ${formatInteger(n)}`} selected={selected} onSelect={setSelected} testId="noise-frame" />
             <GrayImage rgba={meanRgba} title={`Среднее по ${formatInteger(n)} кадрам`} selected={selected} onSelect={setSelected} testId="noise-mean" />
             {showSource ? <GrayImage rgba={sourceRgba} title="Исходник" selected={selected} onSelect={setSelected} testId="noise-source" /> : null}
           </div>
           <p className="hint">Нажмите на любую картинку, чтобы выбрать пиксель: метка появится на обеих.</p>
+          </SpatialView>
         </div>
         <div className="viz-secondary noise-pixel">
           <p className="pixel-row" data-testid="noise-pixel-info">

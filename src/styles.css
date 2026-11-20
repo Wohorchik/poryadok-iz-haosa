@@ -2938,7 +2938,7 @@ circle.dot--selected {
 }
 
 .legend-swatch--out {
-  color: #6f8dbf;
+  color: #7a7a88;
 }
 
 .legend-swatch--mask {
@@ -3100,7 +3100,7 @@ details.more + details.more {
   flex-direction: column;
   gap: 12px;
   padding: 12px;
-  background: rgb(7 21 48 / 0.55);
+  background: var(--harbor);
   border: 1px solid var(--rule);
   border-radius: 10px;
 }
@@ -3132,7 +3132,7 @@ details.more + details.more {
 }
 
 .chart-line {
-  border-top-color: rgb(52 80 127 / 0.45);
+  border-top-color: var(--rule);
 }
 
 .line-legend {

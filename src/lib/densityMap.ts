@@ -3,27 +3,27 @@ import type { VertexIndex } from './chaosGame';
 export type ColorMode = 'vertex' | 'density' | 'order';
 
 const VERTEX_RGB = [
-  [255, 197, 61],
-  [98, 220, 235],
-  [255, 156, 138],
+  [208, 238, 145],
+  [151, 216, 210],
+  [220, 176, 150],
 ] as const;
 
-/** Шкала плотности: тёмно-синий → бирюзовый → жёлтый → почти белый. */
+/** Шкала плотности: тёмно-синий → синий → малиновый → почти белый. */
 export const DENSITY_STOPS = [
-  [40, 70, 130],
-  [98, 220, 235],
-  [255, 197, 61],
-  [255, 246, 214],
+  [30, 34, 90],
+  [74, 92, 255],
+  [255, 79, 200],
+  [255, 232, 248],
 ] as const;
 
 /** Шкала порядка: ранние шаги → поздние. */
 export const ORDER_STOPS = [
-  [98, 220, 235],
-  [180, 150, 255],
-  [255, 156, 138],
+  [74, 92, 255],
+  [170, 90, 240],
+  [255, 79, 200],
 ] as const;
 
-function gradient(stops: readonly (readonly number[])[], value: number): [number, number, number] {
+export function gradient(stops: readonly (readonly number[])[], value: number): [number, number, number] {
   const position = Math.min(1, Math.max(0, value)) * (stops.length - 1);
   const index = Math.min(stops.length - 2, Math.floor(position));
   const fraction = position - index;
@@ -45,6 +45,10 @@ export const cssGradient = (stops: readonly (readonly number[])[]): string =>
  */
 export class DensityMap {
   readonly counts: Uint32Array;
+  readonly reliefSize = 42;
+  readonly relief = new Uint32Array(this.reliefSize ** 2);
+  readonly reliefVertex = new Uint8Array(this.relief.length);
+  readonly reliefStep = new Uint32Array(this.relief.length);
   private readonly owners: Uint8Array;
   private readonly lastStep: Uint32Array;
   maxCount = 0;
@@ -66,6 +70,12 @@ export class DensityMap {
     this.steps += 1;
     const left = Math.floor(x * this.scale);
     const top = Math.floor(y * this.scale);
+    const col = Math.floor(left * this.reliefSize / this.width);
+    const rowIndex = Math.floor(top * this.reliefSize / this.height);
+    const cell = rowIndex * this.reliefSize + col;
+    this.relief[cell] += 1;
+    this.reliefVertex[cell] = vertex;
+    this.reliefStep[cell] = this.steps;
     for (let row = top; row < top + this.dotSize && row < this.height; row += 1) {
       for (let column = left; column < left + this.dotSize && column < this.width; column += 1) {
         const index = row * this.width + column;
@@ -80,6 +90,7 @@ export class DensityMap {
 
   clear(): void {
     this.counts.fill(0);
+    this.relief.fill(0);
     this.lastStep.fill(0);
     this.maxCount = 0;
     this.steps = 0;

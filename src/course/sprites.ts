@@ -1,0 +1,110 @@
+/**
+ * Детали опытов, отрисованные в Blender (tools/render/sprites.py): стеклянные и хромовые шарики,
+ * доска, опора, рейка, стеклянный столбик, перегородка. Загружаются один раз и рисуются на холсте.
+ */
+import { useEffect, useState } from 'react';
+import ballChrome from './sprites/ball-chrome.webp';
+import ballGlass from './sprites/ball-glass.webp';
+import ballTheory from './sprites/ball-theory.webp';
+import beam from './sprites/beam.webp';
+import columnGlass from './sprites/column-glass.webp';
+import columnTheory from './sprites/column-theory.webp';
+import divider from './sprites/divider.webp';
+import fulcrumHot from './sprites/fulcrum-hot.webp';
+import fulcrum from './sprites/fulcrum.webp';
+import peg from './sprites/peg.webp';
+import rail from './sprites/rail.webp';
+
+const SOURCES = {
+  ballChrome,
+  ballGlass,
+  ballTheory,
+  beam,
+  columnGlass,
+  columnTheory,
+  divider,
+  fulcrum,
+  fulcrumHot,
+  peg,
+  rail,
+};
+
+export type SpriteName = keyof typeof SOURCES;
+export type Sprites = Record<SpriteName, HTMLImageElement>;
+
+let loading: Promise<Sprites> | null = null;
+let ready: Sprites | null = null;
+
+/** Детали, если уже загружены, иначе null — для рисования вне React (3D-сцены экспериментов). */
+export const getSprites = (): Sprites | null => ready;
+
+export function loadSprites(): Promise<Sprites> {
+  loading ??= Promise.all(
+    Object.entries(SOURCES).map(
+      ([name, src]) =>
+        new Promise<[string, HTMLImageElement]>((resolve, reject) => {
+          const image = new Image();
+          image.decoding = 'async';
+          image.onload = () => resolve([name, image]);
+          image.onerror = () => reject(new Error('Не загрузилась деталь ' + name));
+          image.src = src;
+        }),
+    ),
+  ).then((entries) => {
+    ready = Object.fromEntries(entries) as Sprites;
+    return ready;
+  });
+  return loading;
+}
+
+/** Детали или null, пока они грузятся (в собранном файле — мгновенно: картинки встроены). */
+export function useSprites(): Sprites | null {
+  const [sprites, setSprites] = useState<Sprites | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadSprites()
+      .then((loaded) => alive && setSprites(loaded))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return sprites;
+}
+
+/** Холст под плотность пикселей экрана: рисуем в CSS-пикселях, на ретине — чётко. */
+export function prepareCanvas(canvas: HTMLCanvasElement, width: number, height: number): CanvasRenderingContext2D | null {
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.round(width * ratio);
+  const h = Math.round(height * ratio);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+  context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  context.clearRect(0, 0, width, height);
+  return context;
+}
+
+/** Шарик-деталь с центром (x, y) и радиусом r. */
+export function drawBall(context: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, r: number): void {
+  context.drawImage(image, x - r, y - r, 2 * r, 2 * r);
+}
+
+/** Стеклянный столбик высотой height: верх и низ не растягиваются, тянется только середина. */
+export function drawColumn(context: CanvasRenderingContext2D, image: HTMLImageElement, x: number, bottom: number, width: number, height: number): void {
+  if (height <= 0) return;
+  const scale = width / image.width;
+  const cap = Math.min(image.width * 0.45, image.height / 2);
+  const capPx = Math.min(cap * scale, height / 2);
+  const capSrc = capPx / scale;
+  const top = bottom - height;
+  context.drawImage(image, 0, 0, image.width, capSrc, x, top, width, capPx);
+  const middle = height - 2 * capPx;
+  if (middle > 0) context.drawImage(image, 0, cap, image.width, image.height - 2 * cap, x, top + capPx, width, middle);
+  context.drawImage(image, 0, image.height - capSrc, image.width, capSrc, x, bottom - capPx, width, capPx);
+}
+
+export const prefersReducedMotion = (): boolean => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;

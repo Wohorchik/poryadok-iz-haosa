@@ -1,0 +1,611 @@
+/* Страница урока, итог курса и учебные виджеты. Переменные — из course.css. */
+
+.c-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 16px;
+  font-size: 14px;
+  color: var(--c-muted);
+}
+.c-crumbs a {
+  color: var(--c-accent-text);
+  text-decoration: none;
+}
+.c-crumbs a:hover {
+  text-decoration: underline;
+}
+
+.c-lesson-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding: 48px 32px 48px 48px;
+  border-radius: 32px;
+  background: #111114;
+}
+.c-lesson-hero-copy {
+  display: grid;
+  gap: 24px;
+  justify-items: start;
+}
+.c-lesson-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.c-lesson-steps button {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c-raised);
+  color: var(--c-text);
+  font: 500 15px var(--body);
+  cursor: pointer;
+}
+.c-lesson-steps button:hover {
+  background: var(--c-raised-hover);
+}
+.c-lesson-steps button:active {
+  transform: translateY(1px);
+}
+.c-lesson-step-num {
+  font: 600 11px var(--c-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-accent-text);
+}
+.c-ok-mark {
+  color: var(--c-ok);
+}
+
+.c-lesson-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+  margin-top: 32px;
+}
+.c-syllabus {
+  position: sticky;
+  top: 88px;
+  display: grid;
+  gap: 8px;
+  padding: 24px 16px;
+  border-radius: 24px;
+  background: var(--c-card);
+}
+.c-syllabus-title {
+  margin: 0 0 8px;
+  font-family: var(--c-display);
+  font-weight: 800;
+  font-size: 24px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.c-syllabus ol {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.c-syllabus a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 12px;
+  color: var(--c-muted);
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.c-syllabus a:hover,
+.c-syllabus a[aria-current='page'] {
+  background: var(--c-raised);
+  color: var(--c-text);
+}
+.c-syllabus-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #44444c;
+  font: 600 12px var(--c-mono);
+}
+.c-syllabus a[aria-current='page'] .c-syllabus-mark {
+  border-color: var(--c-accent);
+  background: var(--c-accent);
+  color: #ffffff;
+}
+.c-syllabus-mark--done {
+  border-color: var(--c-ok);
+  color: var(--c-ok);
+}
+
+.c-lesson-main {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.c-block {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 32px;
+  border-radius: 32px;
+  background: var(--c-card);
+  scroll-margin-top: 88px;
+}
+.c-block > .c-num {
+  margin-bottom: -8px;
+}
+.c-block--next {
+  background: linear-gradient(135deg, #1c1c1f 40%, #1f2150);
+}
+.c-prose {
+  display: grid;
+  gap: 12px;
+  max-width: 68ch;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #e4e4ea;
+}
+.c-prose p {
+  margin: 0;
+}
+.c-prose b {
+  color: #ffffff;
+  font-weight: 650;
+}
+.c-aside,
+.c-prose-muted {
+  margin: 0;
+  color: var(--c-muted);
+  font-size: 15px;
+}
+.c-aside {
+  padding-left: 16px;
+  border-left: 3px solid var(--c-line);
+}
+.c-formula {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 24px;
+  border-radius: 20px;
+  background: #101014;
+  border: 1px solid var(--c-line);
+  font: 500 clamp(20px, 2.4vw, 28px)/1.4 var(--c-mono);
+  white-space: nowrap;
+  color: #ffffff;
+}
+.c-formula-gap {
+  display: inline-block;
+  width: 2.5em;
+}
+.c-bar {
+  text-decoration: overline;
+}
+.c-hint {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #1f2150;
+  color: #dfe3ff;
+  font-size: 15px;
+}
+
+/* ---------- Виджеты ---------- */
+
+.c-widget {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.c-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+}
+.c-segmented {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--c-raised);
+}
+.c-segmented button,
+.c-toggle {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--c-muted);
+  font: 500 15px var(--body);
+  cursor: pointer;
+}
+.c-segmented button:hover,
+.c-toggle:hover {
+  color: var(--c-text);
+}
+.c-segmented button:active,
+.c-toggle:active {
+  transform: translateY(1px);
+}
+.c-segmented button[aria-pressed='true'] {
+  background: #ffffff;
+  color: #000000;
+}
+.c-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  background: var(--c-raised);
+  border-radius: 12px;
+}
+.c-toggle[aria-pressed='true'] {
+  background: #3a1838;
+  color: #ffd6f2;
+}
+.c-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c-accent);
+}
+.c-swatch--theory {
+  background: var(--c-theory);
+}
+
+.c-chart {
+  margin: 0;
+  padding: 16px 8px 8px;
+  border-radius: 20px;
+  background: #101014;
+  border: 1px solid var(--c-line);
+}
+.c-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.c-gridline {
+  stroke: #26262c;
+  stroke-width: 1;
+}
+.c-axis {
+  stroke: #55555f;
+  stroke-width: 1.5;
+}
+.c-tick {
+  fill: var(--c-muted);
+  font: 13px var(--c-mono);
+}
+.c-tick--x {
+  font-size: 15px;
+}
+.c-axis-label {
+  fill: var(--c-muted);
+  font: 13px var(--body);
+}
+.c-empty-label {
+  fill: var(--c-muted);
+  font: 600 20px var(--body);
+}
+.c-bin {
+  cursor: pointer;
+  outline: none;
+}
+.c-bin-hit {
+  fill: transparent;
+}
+.c-bin-bar {
+  fill: var(--c-accent);
+  transition: y 0.25s ease-out, height 0.25s ease-out, fill 0.15s;
+}
+.c-bin:hover .c-bin-bar {
+  fill: var(--c-accent-hover);
+}
+.c-bin--selected .c-bin-bar {
+  fill: #8290ff;
+}
+.c-bin--selected .c-tick--x {
+  fill: #ffffff;
+  font-weight: 700;
+}
+.c-bin:focus-visible .c-bin-hit {
+  stroke: var(--c-accent-text);
+  stroke-width: 3;
+}
+.c-bin-value {
+  fill: #ffffff;
+  font: 700 15px var(--c-mono);
+}
+.c-theory polyline {
+  fill: none;
+  stroke: var(--c-theory);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+}
+.c-theory circle {
+  fill: var(--c-theory);
+  stroke: #101014;
+  stroke-width: 2;
+}
+.c-theory-text {
+  color: var(--c-theory);
+}
+.c-readout {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+.c-readout > div {
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--c-raised);
+}
+.c-readout-wide {
+  grid-column: span 2;
+}
+.c-readout dt {
+  font-size: 13px;
+  color: var(--c-muted);
+}
+.c-readout dd {
+  margin: 4px 0 0;
+  font: 700 20px/1.3 var(--c-mono);
+  overflow-wrap: anywhere;
+}
+.c-widget-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--c-muted);
+}
+.c-range {
+  display: grid;
+  gap: 8px;
+}
+.c-range label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+.c-range output {
+  font-family: var(--c-mono);
+  color: var(--c-accent-text);
+}
+.c-range input[type='range'] {
+  width: 100%;
+  height: 32px;
+  accent-color: var(--c-accent);
+  cursor: pointer;
+}
+.c-status {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--c-raised);
+  font-weight: 600;
+}
+.c-status--ok {
+  background: #16301f;
+  color: #b8f0cd;
+}
+.c-handle {
+  cursor: grab;
+  outline: none;
+  /* Жест на ручке — перетаскивание, а не прокрутка; по остальному графику страница листается как обычно. */
+  touch-action: none;
+}
+.c-handle:active {
+  cursor: grabbing;
+}
+.c-handle:focus-visible .c-handle-ring {
+  stroke: var(--c-accent-text);
+  stroke-width: 3;
+}
+.c-handle-ring {
+  fill: transparent;
+  stroke: transparent;
+}
+
+/* ---------- Итог курса ---------- */
+
+.c-cheatsheet {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+.c-cheatsheet > div {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #101014;
+  border: 1px solid var(--c-line);
+}
+.c-cheatsheet dt {
+  font-size: 13px;
+  color: var(--c-muted);
+}
+.c-cheatsheet dd {
+  margin: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  font: 500 18px/1.4 var(--c-mono);
+}
+.c-summary-list {
+  display: grid;
+  gap: 32px;
+}
+
+/* ---------- Адаптив ---------- */
+
+@media (max-width: 1100px) {
+  .c-lesson-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .c-syllabus {
+    position: static;
+    padding: 16px;
+  }
+  .c-syllabus ol {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .c-syllabus a {
+    white-space: nowrap;
+    background: var(--c-raised);
+  }
+}
+
+@media (max-width: 960px) {
+  .c-lesson-hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 32px 24px;
+  }
+  .c-readout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .c-cheatsheet {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .c-lesson-hero {
+    padding: 24px 16px;
+    border-radius: 24px;
+  }
+  .c-block {
+    padding: 24px 16px;
+    border-radius: 24px;
+  }
+  .c-formula {
+    padding: 16px;
+  }
+  .c-readout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .c-readout-wide {
+    grid-column: auto;
+  }
+  .c-prose {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .c-bin-bar {
+    transition: none;
+  }
+}
+
+.c-mark-label {
+  font: 700 14px var(--c-mono);
+}
+.c-dev-square {
+  fill: rgba(74, 92, 255, 0.16);
+  stroke: #4a5cff;
+  stroke-width: 2;
+  transition: x 0.25s ease-out, y 0.25s ease-out, width 0.25s ease-out, height 0.25s ease-out;
+}
+.c-sigma-square {
+  fill: rgba(255, 79, 200, 0.08);
+  stroke: #ff4fc8;
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  transition: x 0.25s ease-out, y 0.25s ease-out, width 0.25s ease-out, height 0.25s ease-out;
+}
+.c-dot {
+  fill: #ffffff;
+  stroke: #4a5cff;
+  stroke-width: 3;
+  transition: cx 0.25s ease-out;
+}
+.c-dd-small {
+  font-size: 15px !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .c-dev-square,
+  .c-sigma-square,
+  .c-dot {
+    transition: none;
+  }
+}
+.c-bin--theory .c-bin-bar {
+  fill: var(--c-theory);
+}
+.c-bin--theory:hover .c-bin-bar {
+  fill: #ff70d4;
+}
+.c-bin--theory.c-bin--selected .c-bin-bar {
+  fill: #ffb0e6;
+}
+.c-accent-dd {
+  color: var(--c-accent-text);
+}
+/* В шпаргалке две формулы карточки идут в две строки, а не через длинный пробел. */
+.c-cheatsheet .c-formula-gap {
+  display: block;
+  height: 4px;
+}
+.c-chart--scene {
+  padding: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(74, 92, 255, 0.1), transparent 65%),
+    #101014;
+}
+.c-bin-button {
+  display: grid;
+  place-items: center;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--c-muted);
+  font: 600 14px var(--c-mono);
+  cursor: pointer;
+}
+.c-bin-button:hover {
+  color: #ffffff;
+  background: var(--c-raised);
+}
+.c-bin-button--on {
+  color: #ffffff;
+  background: var(--c-accent);
+}
+.c-bin-button--on:hover {
+  background: var(--c-accent-hover);
+}
+.c-bin-button--static {
+  cursor: default;
+}
+.c-bin-button--static:hover {
+  background: transparent;
+  color: var(--c-muted);
+}

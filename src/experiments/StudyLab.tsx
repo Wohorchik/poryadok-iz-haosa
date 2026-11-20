@@ -69,62 +69,37 @@ function Quiz({
   testId: string;
 }) {
   const baseId = useId();
-  const left = answers.filter((answer) => answer === null).length;
+  const [index, setIndex] = useState(() => {
+    const missing = answers.findIndex(value => value === null);
+    return missing < 0 ? questions.length - 1 : missing;
+  });
+  const question = questions[index];
+  const answered = answers.filter(value => value !== null).length;
+  const last = index === questions.length - 1;
   return (
-    <form
-      className="quiz"
-      data-testid={testId}
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (left === 0) onSubmit();
-      }}
-    >
-      <h3>{title}</h3>
-      <p className="hint">
-        Выберите по одному ответу в каждом вопросе. За верный ответ — 1 балл. Правильные ответы и разбор откроются после
-        итогового теста. Ответы сохраняются, даже если обновить страницу.
-      </p>
-      {questions.map((question, index) => (
-        <fieldset className="quiz-question" key={question.id} data-testid={`${testId}-q${index + 1}`}>
-          <legend>
-            <span className="quiz-number">{index + 1}.</span> {question.text}
-          </legend>
-          {question.samples ? (
-            <div className="quiz-samples">
-              {question.samples.map((sample) => (
-                <code key={sample}>{sample}</code>
-              ))}
-            </div>
-          ) : null}
-          <div className="quiz-options">
-            {question.options.map((option, optionIndex) => {
-              const id = `${baseId}-${index}-${optionIndex}`;
-              return (
-                <label className="quiz-option" htmlFor={id} key={option}>
-                  <input
-                    id={id}
-                    type="radio"
-                    name={`${baseId}-${index}`}
-                    checked={answers[index] === optionIndex}
-                    onChange={() => onAnswer(index, optionIndex)}
-                  />
-                  <span>{option}</span>
-                </label>
-              );
-            })}
-          </div>
-        </fieldset>
-      ))}
+    <form className="quiz paper-quiz" data-testid={testId} onSubmit={event => {
+      event.preventDefault();
+      if (answers[index] === null) return;
+      if (!last) setIndex(index + 1);
+      else if (answered === questions.length) onSubmit();
+      else setIndex(answers.findIndex(value => value === null));
+    }}>
+      <div className="paper-quiz-head"><h3>{title}</h3><span aria-live="polite">Вопрос {index+1} из {questions.length}</span></div>
+      <progress value={answered} max={questions.length} aria-label="Отвечено вопросов"/>
+      <fieldset className="quiz-question" key={question.id} data-testid={testId+'-q'+(index+1)}>
+        <legend>{question.text}</legend>
+        {question.samples && <div className="quiz-samples">{question.samples.map(sample=><code key={sample}>{sample}</code>)}</div>}
+        <div className="quiz-options">{question.options.map((option,optionIndex)=>
+          <label className="quiz-option" key={option}>
+            <input type="radio" name={baseId+'-'+index} checked={answers[index]===optionIndex}
+              onChange={()=>onAnswer(index,optionIndex)}/><span>{option}</span>
+          </label>)}</div>
+      </fieldset>
       <div className="quiz-submit">
-        <button className="btn btn--primary" type="submit" disabled={left > 0}>
-          Отправить ответы
-        </button>
-        <p className="hint" role="status">
-          {left > 0
-            ? `Осталось ответить: ${left} ${plural(left, 'вопрос', 'вопроса', 'вопросов')}.`
-            : 'Все ответы выбраны. После отправки изменить их нельзя.'}
-        </p>
+        <button type="button" className="school-secondary" disabled={index===0} onClick={()=>setIndex(index-1)}>← Назад</button>
+        <button type="submit" className="school-button" disabled={answers[index]===null}>{last?'Отправить ответы':'Дальше →'}</button>
       </div>
+      <p className="hint">За верный ответ — 1 балл. Разбор откроется после итогового теста.</p>
     </form>
   );
 }
@@ -560,6 +535,7 @@ export function StudyLab({ active }: { active: boolean }) {
 
   return (
     <section className="study" id="panel-study" hidden={!active}>
+      <a className="school-back" href="#study">← Все курсы</a>
       <div className="study-head">
         <div>
           <h2>Учебное исследование</h2>
@@ -642,7 +618,7 @@ export function StudyLab({ active }: { active: boolean }) {
         </form>
       ) : participant.step === 'pre' ? (
         <Quiz
-          title="Входной тест: 6 вопросов"
+          title="Входной тест"
           questions={PRE_TEST}
           answers={participant.preDraft}
           onAnswer={answer('preDraft')}
@@ -657,7 +633,7 @@ export function StudyLab({ active }: { active: boolean }) {
         />
       ) : participant.step === 'post' ? (
         <Quiz
-          title="Итоговый тест: 6 вопросов"
+          title="Итоговый тест"
           questions={POST_TEST}
           answers={participant.postDraft}
           onAnswer={answer('postDraft')}

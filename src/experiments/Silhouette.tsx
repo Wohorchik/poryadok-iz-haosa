@@ -1,3 +1,5 @@
+import { SpatialView } from '../components/SpatialPlot';
+import { silhouetteScene } from '../lib/experimentScenes';
 import { useEffect, useRef, useState } from 'react';
 import { LineChart, RangeField, RunControls, Segmented } from '../components/Charts';
 import { useFrameLoop } from '../hooks/useFrameLoop';
@@ -38,7 +40,7 @@ function syncPoints(layer: PointsLayer, throws: Throws | null) {
   if (!throws) return;
   for (let index = layer.drawn; index < throws.total; index += 1) {
     const size = pointSize(index);
-    context.fillStyle = throws.inside[index] ? '#ffc53d' : '#3d5a8a';
+    context.fillStyle = throws.inside[index] ? '#6b7bff' : '#7a7a88';
     context.fillRect(throws.xs[index] * VIEW - size / 2, throws.ys[index] * VIEW - size / 2, size, size);
   }
   layer.drawn = throws.total;
@@ -181,7 +183,7 @@ export function Silhouette({ active }: { active: boolean }) {
         <p className="action-line" data-testid="silhouette-action">
           {drawing
             ? 'Нарисуй фигуру кистью или выбери готовую, затем нажми «Начать опыт».'
-            : 'Бросай случайные точки: жёлтые попали внутрь силуэта. Можно ли по ним оценить площадь рисунка?'}
+            : 'Бросай случайные точки. Салатовые попали внутрь силуэта. Можно ли по ним оценить площадь рисунка?'}
         </p>
       </div>
 
@@ -220,6 +222,9 @@ export function Silhouette({ active }: { active: boolean }) {
             </p>
           ) : null}
         </div>
+        <SpatialView title="Слои попаданий" label="Слои попаданий" active={active}
+          caption="Точки внутри фигуры подняты над основанием, промахи лежат внизу. На сцене показано до 1600 точек."
+          build={() => silhouetteScene(mask, drawing ? null : throws, !drawing && hideMask)} />
         {!drawing ? (
           <div className="viz-secondary">
             <LineChart

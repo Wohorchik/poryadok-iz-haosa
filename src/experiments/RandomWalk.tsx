@@ -1,3 +1,6 @@
+import { SpatialView } from '../components/SpatialPlot';
+import { getSprites } from '../course/sprites';
+import { walkScene } from '../lib/experimentScenes';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RangeField, RunControls, Segmented } from '../components/Charts';
 import { useElementWidth } from '../hooks/useElementWidth';
@@ -157,10 +160,18 @@ function drawScene(
   context.fillStyle = lamp;
   context.strokeStyle = color('--deep', '#071530');
   context.lineWidth = 2;
-  context.beginPath();
-  context.arc(px(focusProgress), py(positionAt(tables[focus], focusProgress)), 7, 0, Math.PI * 2);
-  context.fill();
-  context.stroke();
+  const markerX = px(focusProgress);
+  const markerY = py(positionAt(tables[focus], focusProgress));
+  const glass = getSprites()?.ballGlass;
+  if (glass) {
+    // Маркер пути — стеклянный шарик-деталь из Blender.
+    context.drawImage(glass, markerX - 10, markerY - 10, 20, 20);
+  } else {
+    context.beginPath();
+    context.arc(markerX, markerY, 7, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+  }
 }
 
 export function RandomWalk({ active, onOpenGalton }: { active: boolean; onOpenGalton: (path: boolean[]) => void }) {
@@ -276,6 +287,9 @@ export function RandomWalk({ active, onOpenGalton }: { active: boolean; onOpenGa
 
       <div className="viz-column">
         <div className="viz-group">
+          <SpatialView title="Пространство траекторий" label="Пространство траекторий" active={active}
+            caption="Вдоль — шаг, в глубину — номер пути, вверх — положение. При большом числе путей показана часть траекторий."
+            build={() => walkScene(tables, walks.steps, yMax, clock, stagger, replay, { p: walks.p, completed, selected: selectedFinal, sums: walks.sums })}>
           <div className="walk-layout">
             <div className="walk-canvas" ref={ref}>
               <p className="series-axis-title">Положение</p>
@@ -315,6 +329,7 @@ export function RandomWalk({ active, onOpenGalton }: { active: boolean; onOpenGa
               </div>
             </div>
           </div>
+          </SpatialView>
           <p className="walk-status" data-testid="walk-status" aria-live="polite">
             {status}
           </p>

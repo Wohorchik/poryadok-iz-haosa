@@ -1,0 +1,625 @@
+/* Учебный режим: чёрный фон, тёмно-серые карточки, узкие заголовки капсом, синий и малиновый акценты. */
+
+.course-mode {
+  color-scheme: dark;
+  --c-page: #000000;
+  --c-card: #1c1c1f;
+  --c-card-hover: #222226;
+  --c-raised: #26262b;
+  --c-raised-hover: #303036;
+  --c-line: #2e2e34;
+  --c-text: #ffffff;
+  --c-muted: #a1a1aa;
+  --c-accent: #4a5cff;
+  --c-accent-hover: #5c6cff;
+  --c-accent-pressed: #3a4ae6;
+  --c-accent-text: #8290ff;
+  --c-theory: #ff4fc8;
+  --c-ok: #5fd38d;
+  --c-bad: #ff6b6b;
+  --c-mono: Consolas, 'Courier New', monospace;
+  --c-display: 'Sofia Sans Extra Condensed', 'Arial Narrow', sans-serif;
+
+  /* Общие переменные шапки сайта — в тон учебному режиму. */
+  --night: #000000;
+  --deep: #000000;
+  --paper: #ffffff;
+  --mist: #a1a1aa;
+  --rule: #1c1c22;
+  --lamp: #4a5cff;
+
+  min-height: 100vh;
+  background: var(--c-page);
+  color: var(--c-text);
+}
+
+.course-mode .topbar {
+  background: rgba(0, 0, 0, 0.86);
+  backdrop-filter: blur(12px);
+  border-bottom-color: #141418;
+}
+.course-mode .atlas-brand svg {
+  color: var(--c-accent-text);
+}
+.course-mode .topnav .projector-button {
+  border-color: #3a3a42;
+}
+.course-mode .topnav .projector-button[aria-pressed='true'] {
+  background: var(--c-accent);
+  color: #ffffff;
+}
+.course-mode :focus-visible {
+  outline: 3px solid var(--c-accent-text);
+  outline-offset: 3px;
+}
+
+.c-page {
+  max-width: 1232px;
+  margin: 0 auto;
+  padding: 16px 16px 96px;
+}
+
+/* ---------- Типографика ---------- */
+
+.c-title {
+  margin: 0;
+  font-family: var(--c-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+  line-height: 0.92;
+  overflow-wrap: anywhere;
+}
+.c-title em {
+  font-style: normal;
+  color: var(--c-accent);
+}
+.c-title--xl {
+  font-size: clamp(48px, 7vw, 96px);
+}
+.c-title--lg {
+  font-size: clamp(40px, 5vw, 64px);
+}
+.c-title--md {
+  font-size: 32px;
+  line-height: 0.95;
+}
+.c-title--sm {
+  font-size: 24px;
+  line-height: 1;
+}
+.c-eyebrow,
+.c-num {
+  margin: 0;
+  font: 600 12px/1.2 var(--c-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+.c-num {
+  color: var(--c-accent-text);
+}
+.c-lead {
+  max-width: 56ch;
+  margin: 0;
+  color: var(--c-muted);
+  font-size: 18px;
+  line-height: 1.5;
+}
+.c-center {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------- Кнопки ---------- */
+
+.c-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 24px;
+  border: 0;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #000000;
+  font: 500 16px/1.2 var(--body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.15s;
+}
+.c-btn:hover:not(:disabled) {
+  background: #e4e4ea;
+}
+.c-btn:active:not(:disabled) {
+  background: #cfcfd8;
+  transform: translateY(1px);
+}
+.c-btn:disabled {
+  background: var(--c-raised);
+  color: #7c7c86;
+  cursor: not-allowed;
+}
+.c-btn--ghost {
+  background: var(--c-raised);
+  color: #ffffff;
+}
+.c-btn--ghost:hover:not(:disabled) {
+  background: var(--c-raised-hover);
+}
+.c-btn--ghost:active:not(:disabled) {
+  background: #3a3a42;
+}
+.c-btn--small {
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+.c-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ---------- Сетка-фон и шапка каталога ---------- */
+
+.c-grid-bg {
+  position: relative;
+  isolation: isolate;
+}
+.c-grid-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-image: linear-gradient(#1d1d22 1px, transparent 1px), linear-gradient(90deg, #1d1d22 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: linear-gradient(90deg, #000 25%, transparent 80%);
+  pointer-events: none;
+}
+
+.c-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 24px;
+  min-height: 560px;
+  margin-top: 16px;
+  padding: 64px 0 64px 48px;
+  border-radius: 32px;
+  background: #111114;
+}
+.c-hero-copy {
+  display: grid;
+  gap: 24px;
+  justify-items: start;
+}
+
+.c-progress {
+  display: grid;
+  gap: 8px;
+  width: min(320px, 100%);
+  font-size: 14px;
+  color: var(--c-muted);
+}
+.c-bar-track {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--c-raised);
+  overflow: hidden;
+}
+.c-bar-track i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--c-accent);
+  transition: width 0.3s;
+}
+
+/* ---------- 3D-картинки ---------- */
+
+.c-art {
+  --px: 0;
+  --py: 0;
+  position: relative;
+  transform: translate(calc(var(--px) * 8px), calc(var(--py) * 8px));
+  transition: transform 0.4s ease-out;
+  pointer-events: none;
+}
+.c-art-float {
+  animation: c-float 7s ease-in-out infinite;
+}
+.c-art img,
+.c-art video {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 32px 48px rgba(90, 70, 255, 0.28));
+}
+.c-art--hero {
+  margin: -48px -16px -48px 0;
+}
+.c-art--lesson img {
+  max-height: 360px;
+  object-fit: contain;
+}
+@keyframes c-float {
+  50% {
+    transform: translateY(-12px) rotate(-0.6deg);
+  }
+}
+
+/* ---------- Секции, карточки курсов ---------- */
+
+.c-section {
+  display: grid;
+  gap: 16px;
+  margin-top: 96px;
+}
+.c-section > .c-lead {
+  margin-bottom: 32px;
+}
+
+.c-bento {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.c-course {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 480px;
+  padding: 24px;
+  border-radius: 32px;
+  background: var(--c-card);
+  color: var(--c-text);
+  text-decoration: none;
+  overflow: hidden;
+  transition: background-color 0.15s, transform 0.15s;
+}
+.c-course > p {
+  margin: 0;
+  color: var(--c-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.c-course-art {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+  margin: 8px -8px;
+}
+.c-course-art img {
+  max-width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 32px rgba(0, 0, 0, 0.45));
+  transition: transform 0.3s;
+}
+.c-course--ready {
+  background: var(--c-accent);
+}
+/* Белый на #4a5cff — 4,9:1; светло-голубой давал только 4:1. */
+.c-course--ready .c-num,
+.c-course--ready > p,
+.c-course--ready .c-meta {
+  color: #ffffff;
+}
+.c-course--ready .c-bar-track {
+  background: rgba(255, 255, 255, 0.25);
+}
+.c-course--ready .c-bar-track i {
+  background: #ffffff;
+}
+.c-course--ready:hover {
+  background: var(--c-accent-hover);
+}
+.c-course--ready:hover .c-course-art img {
+  transform: translateY(-6px) scale(1.03);
+}
+.c-course--ready:active {
+  background: var(--c-accent-pressed);
+  transform: translateY(1px);
+}
+.c-course--open:hover {
+  background: var(--c-card-hover);
+}
+.c-course--open:hover .c-course-art img {
+  transform: translateY(-6px) scale(1.03);
+}
+.c-course--open:active {
+  transform: translateY(1px);
+}
+.c-course--soon .c-course-art img {
+  opacity: 0.55;
+}
+.c-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--c-muted);
+}
+.c-badge {
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--c-raised);
+  color: var(--c-muted);
+  font: 600 12px/1.6 var(--c-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ---------- Шаги урока ---------- */
+
+.c-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.c-step {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 200px;
+  padding: 24px;
+  border-radius: 32px;
+  background: var(--c-card);
+}
+.c-step p {
+  margin: 0;
+  color: var(--c-muted);
+  font-size: 14px;
+}
+.c-step-track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-family: var(--c-display);
+  font-weight: 800;
+  font-size: 24px;
+  text-transform: uppercase;
+  color: var(--c-accent-text);
+}
+.c-step-track i {
+  flex: 1;
+  border-top: 3px dotted var(--c-accent);
+}
+.c-step[aria-current='step'] {
+  background: var(--c-accent);
+}
+.c-step[aria-current='step'] .c-step-track,
+.c-step[aria-current='step'] p {
+  color: #e6e8ff;
+}
+.c-step[aria-current='step'] .c-step-track i {
+  border-color: #ffffff;
+}
+
+/* ---------- Исследование ---------- */
+
+.c-research {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 96px;
+  padding: 32px;
+  border-radius: 32px;
+  background: var(--c-card);
+}
+.c-research p {
+  margin: 8px 0 0;
+  color: var(--c-muted);
+}
+
+.c-save-note {
+  max-width: 1200px;
+  margin: 16px auto 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #3a1d22;
+  color: #ffd5d5;
+}
+
+/* ---------- Вопрос ---------- */
+
+.c-quiz {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+.c-quiz fieldset {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.c-quiz-text {
+  margin-bottom: 16px;
+  padding: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.c-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.c-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--c-raised);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.c-option:hover {
+  background: var(--c-raised-hover);
+}
+.c-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.c-option-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #6b6b75;
+}
+.c-option:has(input:checked) {
+  border-color: var(--c-accent);
+  background: #23264a;
+}
+.c-option:has(input:checked) .c-option-mark {
+  border: 6px solid var(--c-accent);
+}
+.c-option:has(input:focus-visible) {
+  outline: 3px solid var(--c-accent-text);
+  outline-offset: 3px;
+}
+.c-option--ok,
+.c-option--ok:has(input:checked) {
+  border-color: var(--c-ok);
+  background: #16301f;
+}
+.c-option--ok:has(input:checked) .c-option-mark {
+  border-color: var(--c-ok);
+}
+.c-option--bad,
+.c-option--bad:has(input:checked) {
+  border-color: var(--c-bad);
+  background: #3a1d22;
+}
+.c-option--bad:has(input:checked) .c-option-mark {
+  border-color: var(--c-bad);
+}
+.c-verdict {
+  width: 100%;
+  padding: 16px 20px;
+  border-radius: 16px;
+  border-left: 4px solid;
+  background: var(--c-raised);
+}
+.c-verdict strong {
+  font-size: 18px;
+}
+.c-verdict p {
+  margin: 8px 0 0;
+  color: #d4d4dc;
+}
+.c-verdict--ok {
+  border-color: var(--c-ok);
+}
+.c-verdict--ok strong {
+  color: var(--c-ok);
+}
+.c-verdict--bad {
+  border-color: var(--c-bad);
+}
+.c-verdict--bad strong {
+  color: var(--c-bad);
+}
+.c-quiz-empty {
+  margin: 0;
+  padding: 24px;
+  border-radius: 16px;
+  border: 2px dashed var(--c-line);
+  color: var(--c-muted);
+}
+
+/* ---------- Проектор ---------- */
+
+.app--projector.course-mode .c-page {
+  font-size: 1.15rem;
+}
+
+/* ---------- Адаптив ---------- */
+
+@media (max-width: 1100px) {
+  .c-bento,
+  .c-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .c-hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 48px 24px 24px;
+    min-height: 0;
+  }
+  .c-art--hero {
+    margin: 0;
+  }
+  .c-research {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .c-bento,
+  .c-steps,
+  .c-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .c-hero {
+    padding: 32px 16px 16px;
+    border-radius: 24px;
+  }
+  .c-course,
+  .c-step,
+  .c-research {
+    border-radius: 24px;
+  }
+  .c-course {
+    min-height: 0;
+  }
+  .c-section,
+  .c-research {
+    margin-top: 64px;
+  }
+  .c-lead {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .c-art,
+  .c-art-float {
+    animation: none;
+    transform: none;
+    transition: none;
+  }
+  .c-course,
+  .c-course-art img,
+  .c-bar-track i {
+    transition: none;
+  }
+  .c-course--ready:hover .c-course-art img,
+  .c-course--open:hover .c-course-art img {
+    transform: none;
+  }
+}

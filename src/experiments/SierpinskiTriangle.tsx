@@ -1,3 +1,5 @@
+import { SpatialView } from '../components/SpatialPlot';
+import { triangleScene } from '../lib/experimentScenes';
 import { useEffect, useRef, useState } from 'react';
 import { RangeField, RunControls, Segmented } from '../components/Charts';
 import { Readouts } from '../components/Readouts';
@@ -148,6 +150,8 @@ function CompareSide({
   sharedMax,
   mode,
   side,
+  active,
+  reliefMax,
 }: {
   weights: Triple;
   draft: Draft;
@@ -157,6 +161,8 @@ function CompareSide({
   sharedMax: number;
   mode: ColorMode;
   side: 'left' | 'right';
+  active: boolean;
+  reliefMax: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const parsed = parseWeights(draft);
@@ -166,7 +172,10 @@ function CompareSide({
   }, [map, mode, sharedMax]);
   return (
     <figure className="compare-item" data-testid={`compare-${side}`}>
-      <canvas ref={canvasRef} width={CANVAS_WIDTH / 2} height={CANVAS_HEIGHT / 2} role="img" aria-label={`Рисунок при весах ${weights.join(':')}`} />
+      <SpatialView title={'Веса '+weights.join(' · ')} label={'Плотность при весах '+weights.join(' · ')} active={active}
+        caption="Высота на общей шкале двух рисунков." build={() => triangleScene(map, mode, reliefMax)}>
+        <canvas ref={canvasRef} width={CANVAS_WIDTH / 2} height={CANVAS_HEIGHT / 2} role="img" aria-label={`Рисунок при весах ${weights.join(':')}`} />
+      </SpatialView>
       <figcaption>
         <div className="weights weights--compact">
           {VERTEX_INDEXES.map((index) => (
@@ -207,7 +216,7 @@ function buildCompare(weights: Triple, steps: number, seed: number, fraction: nu
   return { map, counts: [...run.counts] as unknown as Triple };
 }
 
-function CompareMode({ fraction, mode }: { fraction: number; mode: ColorMode }) {
+function CompareMode({ fraction, mode, active }: { fraction: number; mode: ColorMode; active: boolean }) {
   const [left, setLeft] = useState<Draft>(['1', '1', '1']);
   const [right, setRight] = useState<Draft>(COMPARE_WEIGHTS.map(String) as Draft);
   const [leftWeights, setLeftWeights] = useState<Triple>(EQUAL_WEIGHTS);
@@ -229,6 +238,7 @@ function CompareMode({ fraction, mode }: { fraction: number; mode: ColorMode }) 
     if (parsed.ok) (side === 'left' ? setLeftWeights : setRightWeights)(parsed.weights);
   };
   const sharedMax = Math.max(result.left.map.maxCount, result.right.map.maxCount);
+  const reliefMax = Math.max(...result.left.map.relief, ...result.right.map.relief);
 
   return (
     <section className="compare-mode" data-testid="compare-mode" aria-labelledby="compare-title">
@@ -238,8 +248,8 @@ function CompareMode({ fraction, mode }: { fraction: number; mode: ColorMode }) 
         Отличаются только веса. {mode === 'density' ? 'Карты плотности используют общую шкалу яркости.' : ''}
       </p>
       <div className="compare">
-        <CompareSide side="left" weights={leftWeights} draft={left} onDraft={onDraft('left')} map={result.left.map} counts={result.left.counts} sharedMax={sharedMax} mode={mode} />
-        <CompareSide side="right" weights={rightWeights} draft={right} onDraft={onDraft('right')} map={result.right.map} counts={result.right.counts} sharedMax={sharedMax} mode={mode} />
+        <CompareSide side="left" weights={leftWeights} draft={left} onDraft={onDraft('left')} map={result.left.map} counts={result.left.counts} sharedMax={sharedMax} mode={mode} active={active} reliefMax={reliefMax} />
+        <CompareSide side="right" weights={rightWeights} draft={right} onDraft={onDraft('right')} map={result.right.map} counts={result.right.counts} sharedMax={sharedMax} mode={mode} active={active} reliefMax={reliefMax} />
       </div>
       <ColorLegend mode={mode} />
       <Segmented
@@ -292,7 +302,7 @@ export function SierpinskiTriangle({ active }: { active: boolean }) {
   };
 
   // Переключение окраски перекрашивает накопленный рисунок.
-  useEffect(paint, [mode, map]);
+  useEffect(paint, [mode, map, compare]);
 
   const advance = (count: number) => {
     const run = runRef.current as ChaosRun;
@@ -375,12 +385,15 @@ export function SierpinskiTriangle({ active }: { active: boolean }) {
             />
           </div>
           {compare ? (
-            <CompareMode fraction={fraction} mode={mode} />
+            <CompareMode fraction={fraction} mode={mode} active={active} />
           ) : (
             <>
               <p className="pattern-name" data-testid="pattern-name">
                 {name}
               </p>
+              <SpatialView title="Плотность фрактала" label="Плотность фрактала" active={active}
+                caption="Высота показывает число шагов в участке по логарифмической шкале. Поверните сцену, чтобы сравнить вершины."
+                build={() => triangleScene(map, mode)}>
               <div className="triangle">
                 <canvas
                   ref={canvasRef}
@@ -412,6 +425,7 @@ export function SierpinskiTriangle({ active }: { active: boolean }) {
                   ))}
                 </svg>
               </div>
+              </SpatialView>
               <ColorLegend mode={mode} />
               {showMove ? (
                 <p className="hint triangle-legend">
@@ -533,7 +547,7 @@ export function SierpinskiTriangle({ active }: { active: boolean }) {
             <details className="more">
               <summary>Таблицы частот и сохранение PNG</summary>
               <button className="btn" type="button" disabled={snapshot.steps === 0} onClick={() => exportPng(canvasRef.current, `${name}, ${formatInteger(snapshot.steps)} шагов`)}>
-                Сохранить PNG
+                Сохранить рисунок в 2D (PNG)
               </button>
                 <div className="table-scroll">
                 <table className="data-table">

@@ -1,3 +1,5 @@
+import { SpatialView } from '../components/SpatialPlot';
+import { meanScene } from '../lib/experimentScenes';
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { BarChart, RangeField, Segmented } from '../components/Charts';
 import { useElementWidth } from '../hooks/useElementWidth';
@@ -22,6 +24,8 @@ import {
   type Editable,
 } from '../lib/drawDistribution';
 import { NO_DATA, formatInteger, formatStatistic } from '../lib/format';
+import ballChrome from '../course/sprites/ball-chrome.webp';
+import ballGlass from '../course/sprites/ball-glass.webp';
 
 type Mode = 'one' | 'same' | 'own';
 
@@ -153,6 +157,19 @@ function NumberLine({ values, domain, selected, hintIndex, title, testId, onSele
           </g>
         ) : null}
 
+        {/* Точки — шарики-детали из Blender; выбранная — синее стекло, остальные — хром */}
+        {values.map((value, index) => (
+          <image
+            key={'sprite-' + index}
+            href={selected === index ? ballGlass : ballChrome}
+            x={x(value) - radius * 1.2}
+            y={dotY(index) - radius * 1.2}
+            width={radius * 2.4}
+            height={radius * 2.4}
+            pointerEvents="none"
+            aria-hidden="true"
+          />
+        ))}
         {values.map((value, index) => (
           <circle
             key={index}
@@ -319,6 +336,9 @@ export function MeanShift({ active }: { active: boolean }) {
       </div>
 
       <div className="viz-column">
+        <SpatialView title="Центр выборки" label="Центр выборки" active={active}
+          caption="Положение точки — её значение, высота — частота. Метки x̄ и Me показывают среднее и медиану. Двигайте точки на шкале ниже."
+          build={() => meanScene(state.samples, domain)} />
         {state.samples.map((values, sample) => (
           <NumberLine
             key={`${mode}-${sample}`}

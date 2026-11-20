@@ -1,3 +1,5 @@
+import { SpatialView } from '../components/SpatialPlot';
+import { galtonScene } from '../lib/experimentScenes';
 import { useEffect, useRef, useState } from 'react';
 import { BarChart, LineChart, RangeField, RunControls, Segmented } from '../components/Charts';
 import { BoardWithBalls, boardGeometry, useGaltonFlights, type LaunchOptions } from '../components/GaltonBoardView';
@@ -203,7 +205,11 @@ export function GaltonBoard({ active, replay }: { active: boolean; replay?: Galt
 
       <div className="viz-column galton-stack">
         <div className="viz-group" data-testid="galton-group">
+          <SpatialView title="Доска и приёмные ячейки" label="Доска и приёмные ячейки" active={active}
+            caption="Шарики проходят штыри. Высота столбца показывает число шариков относительно самой полной ячейки."
+            build={() => galtonScene(counts, busy ? null : lastPath, flights.airborne(), selected)} animated={busy && !flights.paused}>
           <BoardWithBalls geometry={geometry} lastPath={busy ? null : lastPath} canvasRef={flights.canvasRef} selectedBin={selected} />
+          </SpatialView>
           <p className="status galton-status" aria-live={busy ? 'off' : 'polite'} data-testid="galton-status">
             {status}
           </p>

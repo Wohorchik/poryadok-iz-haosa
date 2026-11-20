@@ -1,0 +1,277 @@
+"""Сцены 3D-картинок учебного режима.
+
+Кадр:     blender -b --factory-startup -P tools/render/assets.py -- --asset hero --out hero.png
+Анимация: blender -b --factory-startup -P tools/render/assets.py -- --asset hero --frames 144 --frame-dir DIR
+"""
+import argparse
+import math
+import os
+import random
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from mathutils import Quaternion, Vector  # noqa: E402
+
+import scene_lib as S  # noqa: E402
+
+
+def hero():
+    S.lights((0, 0, 0.6))
+    S.camera((0.4, -7.6, 3.4), (0, 0, 0.6))
+    _, set_var = S.bell()
+    die = S.die((-1.35, -0.2, 1.55))
+    home = Vector((-1.35, -0.2, 1.55))
+    die.rotation_mode = 'QUATERNION'
+    base = Quaternion((1, 0, 0), math.radians(28)) @ Quaternion((0, 1, 0), math.radians(-18)) @ Quaternion((0, 0, 1), math.radians(38))
+    axis = Vector((0.35, 0.25, 1.0)).normalized()
+    balls = []
+    for location, radius, material, period, phase in [
+        ((1.45, -0.6, 1.25), 0.26, S.chrome(), 1, 0.0),
+        ((1.05, 0.7, 2.05), 0.17, S.glass(), 2, 0.3),
+        ((-0.2, -1.1, 2.15), 0.12, S.chrome(), 3, 0.6),
+        ((0.75, -1.45, 0.3), 0.16, S.chrome(), 2, 0.15),
+    ]:
+        balls.append((S.sphere(location, radius, material), Vector(location), period, phase))
+
+    def pose(t):
+        tau = 2 * math.pi
+        set_var(0.3 + 0.08 * math.sin(tau * 2 * t))  # два «вдоха» за цикл: шире и ниже, уже и выше
+        die.rotation_quaternion = Quaternion(axis, tau * t) @ base
+        die.location = home + Vector((0, 0, 0.12 * math.sin(tau * t)))
+        for ball, start, period, phase in balls:
+            ball.location = start + Vector((0, 0, 0.12 * math.sin(tau * (period * t + phase))))
+
+    return pose
+
+
+def course_descriptive():
+    S.lights((0, 0, 1.0))
+    S.camera((2.3, -5.2, 2.5), (0, 0, 1.15))
+    heights = [0.4, 0.9, 1.6, 2.1, 1.4, 0.7]
+    for i, h in enumerate(heights):
+        S.rounded_box(((i - 2.5) * 0.62, 0, h / 2), (0.48, 0.48, h), 0.1, S.chrome())
+    S.sphere((0.31, 0, 2.1 + 0.5), 0.28, S.glass())
+
+
+def course_distributions():
+    S.lights((0, 0, 2.0), scale=1.15)
+    S.camera((1.5, -7.6, 2.6), (0, 0, 2.05))
+    step = 0.42
+    for row in range(6):
+        for k in range(row + 1):
+            S.sphere(((k - row / 2) * step, 0, 4.1 - row * 0.36), 0.09, S.chrome())
+    stacks = [1, 3, 5, 6, 4, 2, 1]
+    for i, count in enumerate(stacks):
+        x = (i - 3) * step
+        for j in range(count):
+            S.sphere((x, 0, 0.16 + j * 0.3), 0.15, S.glass())
+    for i in range(len(stacks) + 1):
+        S.rounded_box(((i - 3.5) * step, 0, 0.95), (0.04, 0.34, 1.9), 0.018, S.chrome(), segments=4)
+    S.rounded_box((0, 0, -0.03), (len(stacks) * step + 0.12, 0.4, 0.06), 0.025, S.chrome(), segments=4)
+    S.sphere((0.1, 0, 2.18), 0.15, S.glass())
+
+
+def course_limits():
+    S.lights((0, 0, 0.5))
+    S.camera((0.3, -5.3, 2.7), (0, 0, 0.45))
+    S.bell(var=0.3, height=0.95)
+    for location, radius, material in [((1.25, -0.6, 0.45), 0.2, S.glass()), ((-1.2, -0.5, 0.75), 0.14, S.chrome()), ((0.9, 0.9, 1.1), 0.11, S.chrome())]:
+        S.sphere(location, radius, material)
+
+
+def course_montecarlo():
+    S.lights((0, 0, 0))
+    S.camera((0.0, -5.2, 4.6), (0, 0, -0.1))
+    S.torus((0, 0, 0.06), 1.15, 0.07, S.chrome())
+    half = 1.35
+    for x, y, sx, sy in [(0, half, 2 * half + 0.08, 0.08), (0, -half, 2 * half + 0.08, 0.08), (half, 0, 0.08, 2 * half), (-half, 0, 0.08, 2 * half)]:
+        S.rounded_box((x, y, 0.04), (sx, sy, 0.08), 0.035, S.chrome(), segments=4)
+    rng = random.Random(7)
+    for _ in range(140):
+        x, y = rng.uniform(-1.25, 1.25), rng.uniform(-1.25, 1.25)
+        inside = x * x + y * y <= 1.15 ** 2
+        S.sphere((x, y, 0.06), 0.055, S.glass() if inside else S.graphite())
+
+
+def lesson_sample():
+    S.lights((0, 0, 0.8))
+    S.camera((0.7, -7.0, 2.4), (0, 0, 0.85))
+    counts = [2, 5, 3, 1]
+    width = 0.42
+    for i in range(len(counts) + 1):
+        S.rounded_box(((i - 2) * width, 0, 0.85), (0.04, 0.5, 1.7), 0.018, S.chrome(), segments=4)
+    S.rounded_box((0, 0, -0.03), (len(counts) * width + 0.12, 0.56, 0.06), 0.025, S.chrome(), segments=4)
+    for i, count in enumerate(counts):
+        for j in range(count):
+            S.sphere(((i - 1.5) * width, 0, 0.17 + j * 0.33), 0.165, S.glass())
+    S.sphere((1.55, -0.1, 2.05), 0.165, S.glass())
+    S.sphere((-1.45, -0.3, 1.6), 0.12, S.chrome())
+
+
+def lesson_center():
+    S.lights((0, 0, 0.6))
+    S.camera((0.6, -8.4, 2.5), (0, 0, 0.7))
+    values = [2, 5, 8, 12, 18]
+    mean = sum(values) / len(values)
+    to_x = lambda v: (v - 10) * 0.26  # noqa: E731
+    S.prism((to_x(mean), 0, 0.27), 0.36, 0.5, S.chrome())
+    S.rounded_box((0, 0, 0.53), (5.4, 0.6, 0.12), 0.05, S.chrome())
+    for v in values:
+        S.sphere((to_x(v), 0, 0.59 + 0.2), 0.2, S.glass())
+
+
+def lesson_spread():
+    S.lights((0, 0, 0.8))
+    S.camera((0.5, -7.6, 2.0), (0, 0, 0.8))
+    unit = 0.32
+    bar = 0.035
+    for d in [-5, -2, 0, 1, 6]:
+        x = d * unit
+        if d:
+            # Квадрат отклонения — светящийся стеклянный контур со стороной |d|.
+            side = abs(d) * unit
+            cx, cz = x / 2, side / 2
+            for bx, bz, sx, sz in [(cx, side, side, bar), (cx, 0.0, side, bar), (0.0, cz, bar, side), (x, cz, bar, side)]:
+                S.rounded_box((bx, 0, bz), (sx + bar, bar, sz + bar), bar * 0.45, S.glass(), segments=3)
+        S.sphere((x, 0, 0.0), 0.13 if d else 0.17, S.chrome() if d else S.glass())
+    S.rounded_box((0, 0, -0.16), (14 * unit, 0.06, 0.04), 0.015, S.chrome(), segments=3)
+
+
+def lesson_outliers():
+    S.lights((0, 0, 0.3))
+    S.camera((0.0, -9.6, 2.3), (0, 0, 0.3))
+    for i, offset in enumerate([0.0, 0.05, -0.04, 0.08, 0.0, -0.06, 0.03]):
+        S.sphere((-2.6 + i * 0.36 + offset, 0, 0.22), 0.17, S.chrome())
+    S.sphere((2.55, 0, 0.28), 0.24, S.glass())
+    S.rounded_box((0, 0, 0.0), (6.0, 0.08, 0.05), 0.02, S.chrome(), segments=3)
+    S.prism((-1.52, 0, -0.32), 0.16, 0.2, S.glass())  # медиана — на месте
+    S.prism((-0.85, 0, -0.32), 0.16, 0.2, S.chrome())  # среднее уехало вправо
+
+
+def _rod(a, b, radius, material):
+    """Стержень-цилиндр от точки a до точки b."""
+    import bpy
+
+    a, b = Vector(a), Vector(b)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=radius, depth=(b - a).length, location=(a + b) / 2)
+    rod = bpy.context.active_object
+    rod.rotation_mode = 'QUATERNION'
+    rod.rotation_quaternion = (b - a).to_track_quat('Z', 'Y')
+    for polygon in rod.data.polygons:
+        polygon.use_smooth = True
+    rod.data.materials.append(material)
+    return rod
+
+
+def _coin(location, radius, rotation):
+    import bpy
+
+    bpy.ops.mesh.primitive_cylinder_add(vertices=96, radius=radius, depth=radius * 0.16, location=location)
+    coin = bpy.context.active_object
+    coin.rotation_euler = tuple(math.radians(a) for a in rotation)
+    bevel = coin.modifiers.new('Bevel', 'BEVEL')
+    bevel.width = radius * 0.05
+    bevel.segments = 6
+    bevel.harden_normals = True
+    coin.data.materials.append(S.chrome())
+    return coin
+
+
+def lesson_bernoulli():
+    S.lights((0, 0, 1.5))
+    S.camera((0.9, -7.4, 2.6), (0.3, 0, 1.55))
+    for row in range(4):
+        for k in range(row + 1):
+            S.sphere(((k - row / 2) * 0.6, 0, 2.4 - row * 0.55), 0.09, S.chrome())
+    trail = [(0.0, 2.85), (-0.3, 2.13), (0.0, 1.58), (0.3, 1.03), (0.0, 0.48)]
+    for i, (x, z) in enumerate(trail):
+        S.sphere((x, 0, z), 0.17 if i == len(trail) - 1 else 0.12, S.glass())
+    for (x1, z1), (x2, z2) in zip(trail, trail[1:]):
+        _rod((x1, 0, z1), (x2, 0, z2), 0.025, S.glass())
+    _coin((1.75, -0.2, 1.7), 0.45, (28, -12, 20))
+
+
+def lesson_moments():
+    S.lights((0, 0, 0.8))
+    S.camera((1.2, -6.6, 2.1), (0, 0, 0.8))
+    probabilities = [1, 8, 28, 56, 70, 56, 28, 8, 1]
+    for i, count in enumerate(probabilities):
+        h = max(0.06, count / 256 * 8)
+        S.rounded_box(((i - 4) * 0.44, 0, h / 2), (0.36, 0.36, h), 0.06, S.glass(), segments=6)
+    S.rounded_box((0, 0, -0.14), (4.2, 0.08, 0.05), 0.02, S.chrome(), segments=3)
+    S.sphere((0, 0, -0.36), 0.17, S.chrome())
+    for x in (-0.62, 0.62):
+        S.prism((x, 0, -0.34), 0.12, 0.16, S.chrome())
+
+
+def lesson_walk():
+    S.lights((0, 0, 1.2))
+    S.camera((0.0, -9.4, 2.1), (0, 0, 1.25))
+    steps = [1, 1, -1, 1, 1, 1, -1, -1, 1, 1, -1, 1]
+    position = 0
+    points = [(-2.64, 0, 0.6)]
+    for i, step in enumerate(steps):
+        position += step
+        points.append((-2.64 + (i + 1) * 0.44, 0, 0.6 + position * 0.35))
+    for a, b in zip(points, points[1:]):
+        _rod(a, b, 0.03, S.chrome())
+    for i, point in enumerate(points):
+        last = i == len(points) - 1
+        S.sphere(point, 0.2 if last else 0.1, S.glass() if last or i == 0 else S.chrome())
+
+
+def lesson_normal():
+    S.lights((0, 0, 1.0))
+    S.camera((0.9, -6.9, 2.3), (0, 0, 1.05))
+    from math import comb
+
+    m = 16
+    for k in range(m + 1):
+        h = max(0.04, comb(m, k) / 2 ** m * 12)
+        S.rounded_box(((k - 8) * 0.27, 0, h / 2), (0.21, 0.24, h), 0.04, S.chrome(), segments=4)
+    sigma = 2.0
+    x = -8.4
+    while x <= 8.4:
+        density = math.exp(-((x) ** 2) / (2 * sigma ** 2)) / (sigma * math.sqrt(2 * math.pi))
+        S.sphere((x * 0.27, -0.2, density * 12 + 0.16), 0.055, S.glass())
+        x += 0.34
+
+
+ASSETS = {
+    'hero': (hero, (1600, 1200)),
+    'course-descriptive': (course_descriptive, (1200, 1200)),
+    'course-distributions': (course_distributions, (1200, 1200)),
+    'course-limits': (course_limits, (1200, 1200)),
+    'course-montecarlo': (course_montecarlo, (1200, 1200)),
+    'lesson-sample': (lesson_sample, (1600, 1200)),
+    'lesson-center': (lesson_center, (1600, 1200)),
+    'lesson-spread': (lesson_spread, (1600, 1200)),
+    'lesson-outliers': (lesson_outliers, (1600, 1200)),
+    'lesson-bernoulli': (lesson_bernoulli, (1600, 1200)),
+    'lesson-moments': (lesson_moments, (1600, 1200)),
+    'lesson-walk': (lesson_walk, (1600, 1200)),
+    'lesson-normal': (lesson_normal, (1600, 1200)),
+}
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--asset', required=True, choices=sorted(ASSETS))
+    parser.add_argument('--out')
+    parser.add_argument('--samples', type=int, default=256)
+    parser.add_argument('--res')
+    parser.add_argument('--frames', type=int, default=0)
+    parser.add_argument('--frame-dir')
+    parser.add_argument('--start', type=int, default=0)
+    args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
+    build, size = ASSETS[args.asset]
+    if args.res:
+        size = tuple(int(n) for n in args.res.split('x'))
+    S.reset(size[0], size[1], args.samples)
+    pose = build()
+    if args.frames:
+        S.render_frames(pose, args.frames, args.frame_dir, args.start)
+    else:
+        if pose:
+            pose(0.0)
+        S.render_still(args.out)

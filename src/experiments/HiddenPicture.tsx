@@ -1,3 +1,5 @@
+import { SpatialView } from '../components/SpatialPlot';
+import { pictureScene } from '../lib/experimentScenes';
 import { useEffect, useId, useRef, useState } from 'react';
 import { LineChart, RunControls, Segmented } from '../components/Charts';
 import { Readouts } from '../components/Readouts';
@@ -21,7 +23,7 @@ import { PictureSeries } from './PictureSeries';
 const OVERLAY = 640;
 const BATCHES = [1, 10, 100, 1000] as const;
 /** Цвета карты попаданий: 0 — фон, 1 — светлый, дальше насыщеннее. */
-const HEAT = ['#11294f', '#fff1c2', '#ffd466', '#ffb020', '#ff8a5c', '#e5484d'];
+const HEAT = ['#1c1c24', '#e6e8ff', '#9aa6ff', '#6b7bff', '#c45ad8', '#ff4fc8'];
 const heatColor = (hits: number) => HEAT[Math.min(hits, HEAT.length - 1)];
 
 const cellWord = (value: number) => plural(value, 'клетка', 'клетки', 'клеток');
@@ -241,6 +243,9 @@ export function HiddenPicture({ active }: { active: boolean }) {
               onChange={setView}
             />
           </div>
+          <SpatialView title="Рельеф попаданий" label="Рельеф попаданий" active={active}
+            caption="Цвет открывает рисунок, высота показывает число попаданий относительно максимума. Выбрать клетку можно в 2D."
+            build={() => pictureScene(state.hits, size, selected, view === 'heat' ? HEAT : undefined)}>
           <div
             className="picture"
             role="img"
@@ -249,6 +254,7 @@ export function HiddenPicture({ active }: { active: boolean }) {
             {view === 'picture' ? <LighthouseCanvas /> : null}
             <PictureOverlay state={state} view={view} selected={selected} onSelect={setSelected} />
           </div>
+          </SpatialView>
           {view === 'heat' ? (
             <div className="heat-legend" aria-label="Обозначения карты попаданий">
               {['0', '1', '2', '3', '4', '5+'].map((label, index) => (
@@ -262,7 +268,7 @@ export function HiddenPicture({ active }: { active: boolean }) {
           ) : null}
           <p className="bin-info" data-testid="picture-cell-info" aria-live="polite">
             {selected === null
-              ? 'Нажмите на клетку, чтобы узнать, сколько раз в неё попали.'
+              ? 'В режиме 2D нажмите на клетку, чтобы узнать, сколько раз в неё попали.'
               : `Клетка: строка ${selectedRow}, столбец ${selectedColumn} — ${formatInteger(state.hits[selected])} ${plural(state.hits[selected], 'попадание', 'попадания', 'попаданий')}.`}
           </p>
           <p className="status" aria-live={running ? 'off' : 'polite'} data-testid="picture-status">

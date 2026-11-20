@@ -1,4 +1,6 @@
 import { useRef, useState, type CSSProperties } from 'react';
+import { getSprites } from '../course/sprites';
+import pegSprite from '../course/sprites/peg.webp';
 import { useFrameLoop } from '../hooks/useFrameLoop';
 import { binOfPath } from '../lib/galton';
 
@@ -98,7 +100,15 @@ export function Board({
       ) : null}
       {Array.from({ length: g.levels }, (_, level) =>
         Array.from({ length: level + 1 }, (_, peg) => (
-          <circle className="peg" key={`${level}-${peg}`} cx={pegX(g, level, peg)} cy={pegY(g, level)} r={g.pegRadius} />
+          <image
+            className="peg"
+            key={`${level}-${peg}`}
+            href={pegSprite}
+            x={pegX(g, level, peg) - g.pegRadius * 1.4}
+            y={pegY(g, level) - g.pegRadius * 1.4}
+            width={g.pegRadius * 2.8}
+            height={g.pegRadius * 2.8}
+          />
         )),
       )}
       {Array.from({ length: g.bins + 1 }, (_, wall) => (
@@ -176,11 +186,17 @@ function drawFlights(canvas: HTMLCanvasElement | null, g: BoardGeometry, flights
       context.stroke();
       context.restore();
     }
-    context.lineWidth = single ? 3 : 1.5;
-    context.beginPath();
-    context.arc(ball.x, ball.y, radius, 0, Math.PI * 2);
-    context.fill();
-    context.stroke();
+    const glass = getSprites()?.ballGlass;
+    if (glass) {
+      // Шарик — стеклянная деталь из Blender.
+      context.drawImage(glass, ball.x - radius * 1.15, ball.y - radius * 1.15, radius * 2.3, radius * 2.3);
+    } else {
+      context.lineWidth = single ? 3 : 1.5;
+      context.beginPath();
+      context.arc(ball.x, ball.y, radius, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+    }
   }
 }
 
@@ -256,7 +272,12 @@ export function useGaltonFlights(
     }
   });
 
-  return { canvasRef, inFlight, paused, setPaused, launch, cancel };
+  const airborne = () => flightsRef.current.filter(f => f.visible && f.elapsed >= f.delay).map(f => {
+    const { ball } = ballPosition(f.points, f.elapsed - f.delay, f.hopMs);
+    return { x: 2 * ball.x / geometry.width - 1,
+      y: Math.min(1, Math.max(0, ((ball.y - geometry.firstRowY + geometry.lift) / geometry.rowGap + 1) / (geometry.levels + 2))) };
+  });
+  return { canvasRef, inFlight, paused, setPaused, launch, cancel, airborne };
 }
 
 /** Доска с холстом для летящих шариков поверх неё. */

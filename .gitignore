@@ -8,3 +8,7 @@ Thumbs.db
 # Личные настройки Claude Code и хук перезапуска dev-сервера
 .claude/settings.local.json
 .claude/hooks/
+
+# Макеты и рабочие файлы брейншторма и исполнения планов
+.superpowers/
+__pycache__/
