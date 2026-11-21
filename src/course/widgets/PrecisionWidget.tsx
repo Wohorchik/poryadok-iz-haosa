@@ -61,7 +61,7 @@ export function PrecisionWidget({ state, onChange }: WidgetProps<PrecisionState>
         labelEvery={4}
         labelOf={(i) => f3(centre(i))}
         height={240}
-        label={`${PRECISION_REPEATS} оценок π по ${n} точек: разброс ${f3(sd)}, теория ${f3(sigma)}`}
+        label={`${PRECISION_REPEATS} оценок π по ${n} точкам: разброс ${f3(sd)}, теория ${f3(sigma)}`}
       />
 
       <dl className="c-readout">
