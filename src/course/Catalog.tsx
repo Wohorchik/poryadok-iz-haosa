@@ -79,7 +79,8 @@ export function Catalog({ storage }: { storage: StorageLike | null }) {
         </h2>
         <p className="c-lead c-center">
           От выборки до метода Монте-Карло. В каждом уроке — свой опыт по мотивам экспериментов сайта и вопрос, на который отвечаешь по
-          графику. Открыто курсов: {open.length} из {COURSES.length}, остальные готовятся.
+          графику.{' '}
+          {open.length === COURSES.length ? 'Открыты все курсы.' : `Открыто курсов: ${open.length} из ${COURSES.length}, остальные готовятся.`}
         </p>
         <div className="c-bento">
           {COURSES.map((course) => {

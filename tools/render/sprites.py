@@ -52,6 +52,13 @@ def coin(material):
     return disc
 
 
+def tile(material):
+    """Квадратная плитка клетки лицом к камере."""
+    obj = S.rounded_box((0, 0, 0), (1, 0.16, 1), 0.1, material, segments=5)
+    obj.rotation_euler = (-TILT, 0, 0)
+    return obj
+
+
 # Поворот, который ставит грань кубика (раскладка как в scene_lib.die) лицом к −Y; потом — наклон камеры.
 DIE_TURNS = {2: ('Z', 0), 5: ('Z', 180), 1: ('X', 90), 6: ('X', -90), 3: ('Z', -90), 4: ('Z', 90)}
 
@@ -88,6 +95,10 @@ SPRITES = {
     'die-4': (lambda: die_showing(4), 1.7, 1.7, 120, (0, 0, 0), 0.7),
     'die-5': (lambda: die_showing(5), 1.7, 1.7, 120, (0, 0, 0), 0.7),
     'die-6': (lambda: die_showing(6), 1.7, 1.7, 120, (0, 0, 0), 0.7),
+    'ball-graphite': (lambda: S.sphere((0, 0, 0), 0.5, S.graphite()), 1.1, 1.1, 180, (0, 0, 0), 0.5),
+    'tile-closed': (lambda: tile(S.onyx()), 1.3, 1.3, 110, (0, 0, 0), 0.6),
+    'tile-glass': (lambda: tile(S.glass()), 1.3, 1.3, 110, (0, 0, 0), 0.6),
+    'tile-graphite': (lambda: tile(S.graphite()), 1.3, 1.3, 110, (0, 0, 0), 0.6),
 }
 
 

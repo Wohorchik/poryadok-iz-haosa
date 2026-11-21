@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { SPREAD_BASE, outlierRow } from '../math';
 import {
+  areaInitial,
+  indicatorInitial,
+  precisionInitial,
+  restoreArea,
+  restoreIndicator,
+  restorePrecision,
+  restoreShare,
+  shareInitial,
   averagingInitial,
   chaosInitial,
   cltInitial,
@@ -78,5 +86,20 @@ describe('состояния курса 3', () => {
     expect(restoreClt({ dice: 13, thrown: 0, seed: 1 })).toEqual(cltInitial());
     expect(restoreChaos({ steps: -1, seed: 1 })).toEqual(chaosInitial());
     expect(restoreChaos(null)).toEqual(chaosInitial());
+  });
+});
+
+describe('состояния курса 4', () => {
+  it('верные сохранения восстанавливаются', () => {
+    expect(restoreShare({ opened: 120, seed: 4, reveal: true })).toEqual({ opened: 120, seed: 4, reveal: true });
+    expect(restoreArea({ thrown: 20000, seed: 4 })).toEqual({ thrown: 20000, seed: 4 });
+    expect(restorePrecision({ size: 4, seed: 4 })).toEqual({ size: 4, seed: 4 });
+    expect(restoreIndicator({ s: 3, thrown: 10, seed: 4 })).toEqual({ s: 3, thrown: 10, seed: 4 });
+  });
+  it('мусор — начальное состояние', () => {
+    expect(restoreShare({ opened: 401, seed: 4, reveal: false })).toEqual(shareInitial());
+    expect(restoreArea({ thrown: 1.5, seed: 4 })).toEqual(areaInitial());
+    expect(restorePrecision({ size: 5, seed: 4 })).toEqual(precisionInitial());
+    expect(restoreIndicator({ s: 2, thrown: 0, seed: 4 })).toEqual(indicatorInitial());
   });
 });

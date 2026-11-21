@@ -156,6 +156,17 @@ def graphite():
     return _cache['graphite']
 
 
+def onyx():
+    """Тёмный глянцевый пластик: «закрытые» клетки. Не металл, поэтому плоская грань не выгорает в белое."""
+    if 'onyx' not in _cache:
+        m = bpy.data.materials.new('Onyx')
+        m.use_nodes = True
+        set_inputs(m.node_tree.nodes['Principled BSDF'], Base_Color=(0.006, 0.006, 0.01, 1), Metallic=0.0, Roughness=0.42,
+                   Specular_IOR_Level=0.25)
+        _cache['onyx'] = m
+    return _cache['onyx']
+
+
 def glass(pane=False, center=CENTER, rim=EDGE):
     """Синее стекло с малиновым краем и блёстками. pane=True — тонкое прозрачное стекло для плоскостей.
     center/rim меняют цвет: например, малиновое «теоретическое» стекло."""

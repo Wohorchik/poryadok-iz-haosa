@@ -1,10 +1,11 @@
 /**
  * Детали опытов, отрисованные в Blender (tools/render/sprites.py): стеклянные и хромовые шарики,
- * доска, опора, рейка, стеклянный столбик, перегородка, монеты и кубики. Загружаются один раз и рисуются на холсте.
+ * доска, опора, рейка, стеклянный столбик, перегородка, монеты, кубики и плитки клеток. Загружаются один раз и рисуются на холсте.
  */
 import { useEffect, useState } from 'react';
 import ballChrome from './sprites/ball-chrome.webp';
 import ballGlass from './sprites/ball-glass.webp';
+import ballGraphite from './sprites/ball-graphite.webp';
 import ballTheory from './sprites/ball-theory.webp';
 import beam from './sprites/beam.webp';
 import columnGlass from './sprites/column-glass.webp';
@@ -22,10 +23,14 @@ import fulcrumHot from './sprites/fulcrum-hot.webp';
 import fulcrum from './sprites/fulcrum.webp';
 import peg from './sprites/peg.webp';
 import rail from './sprites/rail.webp';
+import tileClosed from './sprites/tile-closed.webp';
+import tileGlass from './sprites/tile-glass.webp';
+import tileGraphite from './sprites/tile-graphite.webp';
 
 const SOURCES = {
   ballChrome,
   ballGlass,
+  ballGraphite,
   ballTheory,
   beam,
   columnGlass,
@@ -43,6 +48,9 @@ const SOURCES = {
   fulcrumHot,
   peg,
   rail,
+  tileClosed,
+  tileGlass,
+  tileGraphite,
 };
 
 export type SpriteName = keyof typeof SOURCES;

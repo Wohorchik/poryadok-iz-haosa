@@ -687,3 +687,41 @@
   text-align: center;
   color: #8290ff;
 }
+
+/* ---------- Курс 4: индикаторы бросков ---------- */
+.c-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-height: 44px;
+}
+.c-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 14px;
+  background: var(--c-raised);
+  font: 600 14px var(--c-mono);
+}
+.c-indicator-dice {
+  display: flex;
+}
+.c-indicator-sum {
+  color: var(--c-muted);
+}
+.c-indicator b {
+  min-width: 24px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  text-align: center;
+  background: #2e2e34;
+  color: var(--c-muted);
+}
+.c-indicator--on b {
+  background: #4a5cff;
+  color: #ffffff;
+}
