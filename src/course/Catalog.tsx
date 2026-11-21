@@ -61,13 +61,26 @@ export function Catalog({ storage }: { storage: StorageLike | null }) {
               Все эксперименты
             </a>
           </div>
-          <div className="c-progress" aria-label={`Пройдено ${done} из ${total} уроков курса ${n}`}>
-            <span>
-              Курс {n} · пройдено {done} из {total}
-            </span>
-            <span className="c-bar-track" aria-hidden="true">
-              <i style={{ width: `${(done / total) * 100}%` }} />
-            </span>
+          <div className="c-hero-progress" aria-label={`Пройдено ${done} из ${total} уроков курса ${n}`}>
+            <div className="c-hero-progress-head">
+              <span className="c-hero-progress-course">
+                Курс {n} · {first.title}
+              </span>
+              <span className="c-hero-progress-count" aria-hidden="true">
+                {done}
+                <span> / {total}</span>
+              </span>
+            </div>
+            <div className="c-hero-progress-segs" aria-hidden="true">
+              {first.lessons.map((lesson) => {
+                const passed = readRecord(storage, `${first.id}/${lesson.id}`).done;
+                const current = !passed && done < total && lesson === next;
+                return <i key={lesson.id} className={passed ? 'is-done' : current ? 'is-next' : undefined} />;
+              })}
+            </div>
+            <p className="c-hero-progress-next">
+              {done === total ? 'Курс пройден — можно повторить' : `Дальше: урок ${next.number} «${next.title}»`}
+            </p>
           </div>
         </div>
         <Art size="hero" src={heroPoster} video={heroVideo} alt="Стеклянный кубик, хромовый колокол Гаусса и шарики" />

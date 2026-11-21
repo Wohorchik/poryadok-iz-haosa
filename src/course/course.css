@@ -199,10 +199,57 @@
   justify-items: start;
 }
 
-.c-progress {
+.c-hero-progress {
   display: grid;
-  gap: 8px;
-  width: min(320px, 100%);
+  gap: 10px;
+  width: min(400px, 100%);
+  margin-top: 8px;
+}
+.c-hero-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+.c-hero-progress-course {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+}
+.c-hero-progress-count {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1;
+  color: #ffffff;
+  white-space: nowrap;
+}
+.c-hero-progress-count span {
+  color: #6a6a76;
+}
+.c-hero-progress-segs {
+  display: flex;
+  gap: 6px;
+}
+.c-hero-progress-segs i {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: #2e2e34;
+  transition:
+    background 0.3s,
+    box-shadow 0.3s;
+}
+.c-hero-progress-segs i.is-done {
+  background: var(--c-accent);
+}
+.c-hero-progress-segs i.is-next {
+  background: #ff6fb5;
+  box-shadow: 0 0 12px rgba(255, 111, 181, 0.65);
+}
+.c-hero-progress-next {
+  margin: 0;
   font-size: 14px;
   color: var(--c-muted);
 }
@@ -615,7 +662,8 @@
   }
   .c-course,
   .c-course-art img,
-  .c-bar-track i {
+  .c-bar-track i,
+  .c-hero-progress-segs i {
     transition: none;
   }
   .c-course--ready:hover .c-course-art img,
