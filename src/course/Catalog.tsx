@@ -137,7 +137,7 @@ export function Catalog({ storage }: { storage: StorageLike | null }) {
             return (
               <a
                 key={course.id}
-                className={'c-course ' + (course.id === COURSES[0].id ? 'c-course--ready' : 'c-course--open')}
+                className={'c-course ' + (course.id === first.id ? 'c-course--ready' : 'c-course--open')}
                 href={lessonHash(course, nextLesson)}
               >
                 {body}
