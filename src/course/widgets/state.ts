@@ -1,5 +1,5 @@
 /**
- * Состояния учебных виджетов курса 1: начальные значения и восстановление из localStorage.
+ * Состояния учебных виджетов курсов 1–3: начальные значения и восстановление из localStorage.
  * Всё, что не прошло проверку, заменяется начальным состоянием целиком.
  */
 import { BOARD_BINS, SPREAD_BASE, outlierRow } from '../math';
@@ -188,4 +188,67 @@ export function restoreNormal(raw: unknown): NormalState {
   const o = asObject(raw);
   if (o && isInt(o.m, 4, 100) && isInt(o.p, 10, 90) && o.p % 10 === 0) return { m: o.m, p: o.p };
   return normalInitial();
+}
+
+/* 3.1 Частота и вероятность */
+export interface LlnState {
+  /** Вероятность успеха в процентах, шаг 10. */
+  p: number;
+  thrown: number;
+  seed: number;
+}
+export const LLN_MAX = 5000;
+export const llnInitial = (): LlnState => ({ p: 50, thrown: 0, seed: 314 });
+export function restoreLln(raw: unknown): LlnState {
+  const o = asObject(raw);
+  if (o && isInt(o.p, 10, 90) && o.p % 10 === 0 && isInt(o.thrown, 0, LLN_MAX) && isInt(o.seed, 1, 2 ** 32 - 1)) {
+    return { p: o.p, thrown: o.thrown, seed: o.seed };
+  }
+  return llnInitial();
+}
+
+/* 3.2 Усреднение шума */
+export interface AveragingState {
+  /** Амплитуда равномерного шума, 40–160 с шагом 20. */
+  amplitude: number;
+  frames: number;
+  seed: number;
+}
+export const AVERAGING_MAX = 64;
+export const averagingInitial = (): AveragingState => ({ amplitude: 120, frames: 1, seed: 21 });
+export function restoreAveraging(raw: unknown): AveragingState {
+  const o = asObject(raw);
+  if (o && isInt(o.amplitude, 40, 160) && o.amplitude % 20 === 0 && isInt(o.frames, 1, AVERAGING_MAX) && isInt(o.seed, 1, 2 ** 32 - 1)) {
+    return { amplitude: o.amplitude, frames: o.frames, seed: o.seed };
+  }
+  return averagingInitial();
+}
+
+/* 3.3 Центральная предельная теорема */
+export interface CltState {
+  dice: number;
+  thrown: number;
+  seed: number;
+}
+export const CLT_MAX = 5000;
+export const cltInitial = (): CltState => ({ dice: 1, thrown: 0, seed: 6 });
+export function restoreClt(raw: unknown): CltState {
+  const o = asObject(raw);
+  if (o && isInt(o.dice, 1, 12) && isInt(o.thrown, 0, CLT_MAX) && isInt(o.seed, 1, 2 ** 32 - 1)) {
+    return { dice: o.dice, thrown: o.thrown, seed: o.seed };
+  }
+  return cltInitial();
+}
+
+/* 3.4 Порядок из хаоса */
+export interface ChaosState {
+  steps: number;
+  seed: number;
+}
+export const CHAOS_MAX = 30000;
+export const chaosInitial = (): ChaosState => ({ steps: 0, seed: 1904 });
+export function restoreChaos(raw: unknown): ChaosState {
+  const o = asObject(raw);
+  if (o && isInt(o.steps, 0, CHAOS_MAX) && isInt(o.seed, 1, 2 ** 32 - 1)) return { steps: o.steps, seed: o.seed };
+  return chaosInitial();
 }

@@ -11,10 +11,19 @@ import lessonBernoulli from './art/lesson-bernoulli.webp';
 import lessonMoments from './art/lesson-moments.webp';
 import lessonNormal from './art/lesson-normal.webp';
 import lessonWalk from './art/lesson-walk.webp';
+import lessonChaos from './art/lesson-chaos.webp';
+import lessonClt from './art/lesson-clt.webp';
+import lessonLln from './art/lesson-lln.webp';
+import lessonNoise from './art/lesson-noise.webp';
 import { SPREAD_QUESTION, SUMMARY_QUESTIONS, centerQuestion, frequencyQuestion, outlierQuestion } from './math';
 import { SUMMARY_QUESTIONS_2, momentsQuestion, normalQuestion, pathsQuestion, walkQuestion } from './math2';
+import { SUMMARY_QUESTIONS_3, chaosQuestion, cltQuestion, llnQuestion, noiseQuestion } from './math3';
 import type { CourseDef, LessonDef } from './types';
+import { AveragingWidget } from './widgets/AveragingWidget';
 import { BalanceWidget } from './widgets/BalanceWidget';
+import { ChaosWidget } from './widgets/ChaosWidget';
+import { CltWidget } from './widgets/CltWidget';
+import { LlnWidget } from './widgets/LlnWidget';
 import { MomentsWidget } from './widgets/MomentsWidget';
 import { NormalWidget } from './widgets/NormalWidget';
 import { PathsWidget } from './widgets/PathsWidget';
@@ -23,6 +32,14 @@ import { FrequencyWidget } from './widgets/FrequencyWidget';
 import { OutlierWidget } from './widgets/OutlierWidget';
 import { SpreadWidget } from './widgets/SpreadWidget';
 import {
+  averagingInitial,
+  chaosInitial,
+  cltInitial,
+  llnInitial,
+  restoreAveraging,
+  restoreChaos,
+  restoreClt,
+  restoreLln,
   balanceInitial,
   frequencyInitial,
   momentsInitial,
@@ -336,6 +353,146 @@ const normal = defineLesson({
   question: (state) => normalQuestion(state.m, pct(state.p)),
 });
 
+/* ---------- Курс 3 «Предельные теоремы» ---------- */
+
+const lln = defineLesson({
+  id: 'frequency',
+  number: '3.1',
+  title: 'Частота и вероятность',
+  accent: 'вероятность',
+  lead: 'Один бросок монеты непредсказуем, тысяча — почти нет. Смотрим, как частота успеха ложится на вероятность.',
+  idea: (
+    <>
+      <p>
+        Событие A наступает в каждом опыте с вероятностью p. Сделаем n независимых опытов: n<sub>A</sub> из них — успехи.{' '}
+        <b>Относительная частота</b> w = n<sub>A</sub> / n сама случайна: у разных серий она разная.
+      </p>
+      <p>
+        <b>Закон больших чисел</b> (теорема Бернулли): с ростом n частота w сходится к p. Насколько близко — говорит стандартное
+        отклонение частоты σ<sub>w</sub> = √(p(1 − p)/n): примерно в 95 % серий |w − p| ≤ 2σ<sub>w</sub>.
+      </p>
+      <p>
+        Обратите внимание на корень: чтобы погрешность уменьшилась вдвое, опытов нужно вчетверо больше. Именно поэтому на графике раструб
+        сначала сужается быстро, а потом всё медленнее.
+      </p>
+    </>
+  ),
+  formula: (
+    <>
+      w = n<sub>A</sub> / n → p<span className="c-formula-gap" />σ<sub>w</sub> = √(p(1 − p) / n)
+    </>
+  ),
+  art: lessonLln,
+  experiment: { hash: '#triangle', label: 'Треугольник Серпинского' },
+  hint: 'Нажмите +10 несколько раз: частота скачет. Потом +1000 — линия прижмётся к p и не выйдет из раструба. Поменяйте p и повторите.',
+  initial: llnInitial,
+  restore: restoreLln,
+  Widget: LlnWidget,
+  question: (state) => llnQuestion(state.p / 100),
+});
+
+const averaging = defineLesson({
+  id: 'averaging',
+  number: '3.2',
+  title: 'Усреднение шума',
+  accent: 'шума',
+  lead: 'Каждый кадр испорчен шумом, но среднее многих кадров проявляет картинку. Шум падает как σ/√n.',
+  idea: (
+    <>
+      <p>
+        Каждый пиксель кадра — истинная яркость плюс случайный шум со средним 0 и стандартным отклонением σ. Шумы разных кадров
+        независимы.
+      </p>
+      <p>
+        Среднее n кадров: истинная яркость не меняется, а шумы частично гасят друг друга. Дисперсия среднего n независимых величин в n раз
+        меньше, поэтому шум среднего равен <b>σ/√n</b>.
+      </p>
+      <p>Это тот же закон больших чисел, только для яркости пикселя, и та же цена точности: вдвое тише — вчетверо больше кадров.</p>
+    </>
+  ),
+  formula: (
+    <>
+      D({xbar}) = σ² / n<span className="c-formula-gap" />σ({xbar}) = σ / √n
+    </>
+  ),
+  art: lessonNoise,
+  experiment: { hash: '#noise', label: 'От шума к изображению' },
+  hint: 'Сдвиньте n с 1 до 4, потом до 16 и 64: каждый раз шум уменьшается вдвое. Сделайте шум сильнее — кривая поднимется, но форма останется.',
+  initial: averagingInitial,
+  restore: restoreAveraging,
+  Widget: AveragingWidget,
+  question: (state) => noiseQuestion(state.amplitude),
+});
+
+const clt = defineLesson({
+  id: 'clt',
+  number: '3.3',
+  title: 'Центральная предельная теорема',
+  accent: 'предельная',
+  lead: 'Один кубик даёт ровные столбики. Сумма нескольких кубиков — уже колокол Гаусса.',
+  idea: (
+    <>
+      <p>
+        Возьмём сумму S<sub>n</sub> = X<sub>1</sub> + … + X<sub>n</sub> независимых одинаково распределённых слагаемых со средним μ и
+        дисперсией σ². Тогда E(S<sub>n</sub>) = nμ и D(S<sub>n</sub>) = nσ².
+      </p>
+      <p>
+        <b>Центральная предельная теорема:</b> при большом n распределение S<sub>n</sub> близко к нормальному N(nμ, nσ²) — каким бы ни
+        было распределение одного слагаемого. У кубика оно равномерное (μ = 3,5, σ² = 35/12), а сумма уже 3–4 кубиков похожа на колокол.
+      </p>
+      <p className="c-aside">Доска Гальтона из курса 2 — частный случай: там слагаемые — повороты вправо (0 или 1).</p>
+    </>
+  ),
+  formula: (
+    <>
+      S<sub>n</sub> ≈ N(nμ, nσ²)<span className="c-formula-gap" />кубик: μ = 3,5, σ² = 35/12
+    </>
+  ),
+  art: lessonClt,
+  experiment: { hash: '#galton', label: 'Доска Гальтона' },
+  hint: 'Бросьте 1000 раз один кубик — столбики ровные. Затем поставьте n = 2, 3, 6, 12 и бросайте снова: гистограмма всё точнее ложится на кривую.',
+  initial: cltInitial,
+  restore: restoreClt,
+  Widget: CltWidget,
+  question: (state) => cltQuestion(state.dice),
+});
+
+const chaos = defineLesson({
+  id: 'chaos',
+  number: '3.4',
+  title: 'Порядок из хаоса',
+  accent: 'хаоса',
+  lead: 'Каждая точка ставится наугад, а картинка всегда получается одна и та же — треугольник Серпинского.',
+  idea: (
+    <>
+      <p>
+        <b>Игра хаоса.</b> Есть три вершины A, B, C. Берём текущую точку P, выбираем вершину V наугад (каждую с вероятностью 1/3) и ставим
+        новую точку в середину отрезка PV. Повторяем тысячи раз.
+      </p>
+      <p>
+        Новая точка всегда лежит в угловом треугольнике выбранной вершины, а с учётом предыдущего шага — в одном из 9 треугольников второго
+        уровня. Поэтому доля точек в нём — это частота пары последних вершин, и по закону больших чисел она стремится к 1/9.
+      </p>
+      <p>
+        Случайны отдельные шаги, но не итог: частоты устойчивы, и из них складывается фрактал. Это и есть порядок из хаоса, который
+        объединяет весь курс.
+      </p>
+    </>
+  ),
+  formula: (
+    <>
+      P<sub>k+1</sub> = (P<sub>k</sub> + V) / 2<span className="c-formula-gap" />доля уровня L → (1/3)<sup>L</sup>
+    </>
+  ),
+  art: lessonChaos,
+  experiment: { hash: '#triangle', label: 'Треугольник Серпинского' },
+  hint: 'После +100 видно только облако. Добавьте +1000 и +10 000 — проступят дыры. Следите за таблицей: все 9 долей сходятся к 0,11.',
+  initial: chaosInitial,
+  restore: restoreChaos,
+  Widget: ChaosWidget,
+  question: (state) => chaosQuestion(state.steps),
+});
+
 export const COURSES: CourseDef[] = [
   {
     id: 'descriptive',
@@ -384,12 +541,22 @@ export const COURSES: CourseDef[] = [
     number: 3,
     title: 'Предельные теоремы',
     summary: 'Почему частота стремится к вероятности, а сумма случайностей — к колоколу Гаусса.',
-    topics: 'Закон больших чисел · Усреднение и σ/√n · ЦПТ · Порядок из хаоса',
+    topics: 'Частота и вероятность · Усреднение шума · ЦПТ · Порядок из хаоса',
     art: courseLimits,
-    lessons: [],
-    ready: false,
-    summaryQuestions: [],
-    experiments: [],
+    lessons: [lln, averaging, clt, chaos],
+    ready: true,
+    cheatsheet: [
+      { label: 'Частота и её разброс', formula: lln.formula },
+      { label: 'Шум среднего n кадров', formula: averaging.formula },
+      { label: 'Центральная предельная теорема', formula: clt.formula },
+      { label: 'Игра хаоса', formula: chaos.formula },
+    ],
+    summaryQuestions: SUMMARY_QUESTIONS_3,
+    experiments: [
+      { hash: '#triangle', label: 'Треугольник Серпинского' },
+      { hash: '#noise', label: 'От шума к изображению' },
+      { hash: '#galton', label: 'Доска Гальтона' },
+    ],
   },
   {
     id: 'montecarlo',

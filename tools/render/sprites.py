@@ -36,6 +36,37 @@ def ortho_camera(width, height, target=(0, 0, 0)):
     bpy.context.scene.camera = cam
 
 
+def coin(material):
+    """Монета лицом к камере (с учётом наклона камеры) с хромовым ободком."""
+    bpy.ops.mesh.primitive_cylinder_add(vertices=96, radius=0.5, depth=0.09, location=(0, 0, 0))
+    disc = bpy.context.active_object
+    disc.rotation_euler = (math.pi / 2 - TILT, 0, 0)
+    bevel = disc.modifiers.new('Bevel', 'BEVEL')
+    bevel.width = 0.025
+    bevel.segments = 6
+    disc.data.materials.append(material)
+    for polygon in disc.data.polygons:
+        polygon.use_smooth = True
+    rim = S.torus((0, 0, 0), 0.47, 0.04, S.chrome())
+    rim.rotation_euler = disc.rotation_euler
+    return disc
+
+
+# Поворот, который ставит грань кубика (раскладка как в scene_lib.die) лицом к −Y; потом — наклон камеры.
+DIE_TURNS = {2: ('Z', 0), 5: ('Z', 180), 1: ('X', 90), 6: ('X', -90), 3: ('Z', -90), 4: ('Z', 90)}
+
+
+def die_showing(face):
+    """Стеклянный кубик гранью face к камере, без поворота в плоскости кадра."""
+    from mathutils import Matrix
+
+    axis, degrees = DIE_TURNS[face]
+    turn = Matrix.Rotation(-TILT, 4, 'X') @ Matrix.Rotation(math.radians(degrees), 4, axis)
+    parent = S.die((0, 0, 0), size=1.0)
+    parent.rotation_mode = 'QUATERNION'
+    parent.rotation_quaternion = turn.to_quaternion()
+    return parent
+
 # name: (сборка, ширина кадра, высота кадра, пикселей на единицу, центр кадра, масштаб света)
 SPRITES = {
     'ball-glass': (lambda: S.sphere((0, 0, 0), 0.5, S.glass()), 1.1, 1.1, 180, (0, 0, 0), 0.5),
@@ -49,6 +80,14 @@ SPRITES = {
     'column-glass': (lambda: S.rounded_box((0, 0, 0), (1, 1, 3), 0.14, S.glass()), 1.3, 3.6, 120, (0, 0, 0), 0.8),
     'column-theory': (lambda: S.rounded_box((0, 0, 0), (1, 1, 3), 0.14, S.glass(**THEORY)), 1.3, 3.6, 120, (0, 0, 0), 0.8),
     'divider': (lambda: S.rounded_box((0, 0, 0), (0.1, 0.6, 3), 0.04, S.chrome(), segments=4), 0.5, 3.4, 120, (0, 0, 0), 0.8),
+    'coin-glass': (lambda: coin(S.glass()), 1.15, 1.15, 160, (0, 0, 0), 0.5),
+    'coin-graphite': (lambda: coin(S.graphite()), 1.15, 1.15, 160, (0, 0, 0), 0.5),
+    'die-1': (lambda: die_showing(1), 1.7, 1.7, 120, (0, 0, 0), 0.7),
+    'die-2': (lambda: die_showing(2), 1.7, 1.7, 120, (0, 0, 0), 0.7),
+    'die-3': (lambda: die_showing(3), 1.7, 1.7, 120, (0, 0, 0), 0.7),
+    'die-4': (lambda: die_showing(4), 1.7, 1.7, 120, (0, 0, 0), 0.7),
+    'die-5': (lambda: die_showing(5), 1.7, 1.7, 120, (0, 0, 0), 0.7),
+    'die-6': (lambda: die_showing(6), 1.7, 1.7, 120, (0, 0, 0), 0.7),
 }
 
 

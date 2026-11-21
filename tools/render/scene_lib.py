@@ -67,7 +67,8 @@ def reset(width, height, samples):
 
 def _world(scene):
     """Студийный HDRI виден только в отражениях; сквозь стекло — темнота, как фон сайта."""
-    studio = os.path.join(os.path.dirname(bpy.app.binary_path), '5.3', 'datafiles', 'studiolights', 'world', 'studio.exr')
+    # system_resource работает и в blender.exe, и в модуле bpy из pip (там binary_path пустой).
+    studio = os.path.join(bpy.utils.system_resource('DATAFILES'), 'studiolights', 'world', 'studio.exr')
     world = bpy.data.worlds.new('World')
     scene.world = world
     world.use_nodes = True
