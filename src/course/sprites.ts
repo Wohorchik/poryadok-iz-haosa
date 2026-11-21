@@ -1,6 +1,6 @@
 /**
  * Детали опытов, отрисованные в Blender (tools/render/sprites.py): стеклянные и хромовые шарики,
- * доска, опора, рейка, стеклянный столбик, перегородка, монеты, кубики и плитки клеток. Загружаются один раз и рисуются на холсте.
+ * доска, опора, рейка, стеклянный столбик, перегородка, монеты, кубики, плитки клеток и хромовые рамки. Загружаются один раз и рисуются на холсте.
  */
 import { useEffect, useState } from 'react';
 import ballChrome from './sprites/ball-chrome.webp';
@@ -19,6 +19,8 @@ import die4 from './sprites/die-4.webp';
 import die5 from './sprites/die-5.webp';
 import die6 from './sprites/die-6.webp';
 import divider from './sprites/divider.webp';
+import frameCell from './sprites/frame-cell.webp';
+import frameWide from './sprites/frame-wide.webp';
 import fulcrumHot from './sprites/fulcrum-hot.webp';
 import fulcrum from './sprites/fulcrum.webp';
 import peg from './sprites/peg.webp';
@@ -44,6 +46,8 @@ const SOURCES = {
   die5,
   die6,
   divider,
+  frameCell,
+  frameWide,
   fulcrum,
   fulcrumHot,
   peg,
@@ -79,6 +83,12 @@ export function loadSprites(): Promise<Sprites> {
     return ready;
   });
   return loading;
+}
+
+/** Хромовая рамка-деталь вокруг квадрата (x, y, side): трубка лежит по краю, половина толщины — снаружи. */
+export function drawFrame(context: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, side: number, bar: number): void {
+  const grow = side * bar;
+  context.drawImage(image, x - grow, y - grow, side + 2 * grow, side + 2 * grow);
 }
 
 /** Грань кубика 1…6 — картинка детали (для <img>, без холста). */

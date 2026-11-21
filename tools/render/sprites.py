@@ -59,6 +59,26 @@ def tile(material):
     return obj
 
 
+def frame(bar):
+    """Квадратная рамка 1 × 1 из хромовых трубок толщины bar с шариками в углах, лицом к камере.
+    Трубки круглые: плоский хром выгорает в белое, а у цилиндра виден перелив."""
+    parent = bpy.data.objects.new('Frame', None)
+    bpy.context.scene.collection.objects.link(parent)
+    h = 0.5 - bar / 2
+    r = bar / 2
+    for location, rotation in [((0, 0, h), (0, math.pi / 2, 0)), ((0, 0, -h), (0, math.pi / 2, 0)), ((h, 0, 0), (0, 0, 0)), ((-h, 0, 0), (0, 0, 0))]:
+        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=r, depth=2 * h, location=location, rotation=rotation)
+        tube = bpy.context.active_object
+        for polygon in tube.data.polygons:
+            polygon.use_smooth = True
+        tube.data.materials.append(S.chrome())
+        tube.parent = parent
+    for x in (-h, h):
+        for z in (-h, h):
+            S.sphere((x, 0, z), r * 1.15, S.chrome()).parent = parent
+    parent.rotation_euler = (-TILT, 0, 0)
+    return parent
+
 # Поворот, который ставит грань кубика (раскладка как в scene_lib.die) лицом к −Y; потом — наклон камеры.
 DIE_TURNS = {2: ('Z', 0), 5: ('Z', 180), 1: ('X', 90), 6: ('X', -90), 3: ('Z', -90), 4: ('Z', 90)}
 
@@ -99,6 +119,8 @@ SPRITES = {
     'tile-closed': (lambda: tile(S.onyx()), 1.3, 1.3, 110, (0, 0, 0), 0.6),
     'tile-glass': (lambda: tile(S.glass()), 1.3, 1.3, 110, (0, 0, 0), 0.6),
     'tile-graphite': (lambda: tile(S.graphite()), 1.3, 1.3, 110, (0, 0, 0), 0.6),
+    'frame-cell': (lambda: frame(0.07), 1.12, 1.12, 110, (0, 0, 0), 0.6),
+    'frame-wide': (lambda: frame(0.022), 1.06, 1.06, 640, (0, 0, 0), 0.6),
 }
 
 
