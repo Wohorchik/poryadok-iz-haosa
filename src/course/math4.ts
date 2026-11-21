@@ -139,7 +139,7 @@ export function precisionQuestion(n: number): QuizQuestion {
   const k = n >= 1024 ? 3 : 2;
   const correct = Math.round(Math.log2(n)) % 3;
   return {
-    text: `По n = ${int(n)} точек оценка π имеет σ ≈ ${f3(piSigma(n))}. Сколько точек нужно, чтобы σ стала в ${k} раза меньше?`,
+    text: `По n = ${int(n)} точкам оценка π имеет σ ≈ ${f3(piSigma(n))}. Сколько точек нужно, чтобы σ стала в ${k} раза меньше?`,
     options: arrange(int(n * k * k), [int(n * k), int(n * k * k * k * k), int(n + k)], correct),
     correct,
     explanation: `σ оценки пропорциональна 1/√n. Чтобы уменьшить её в ${k} раза, нужно в ${k}² = ${k * k} раза больше точек: ${int(n)} · ${k * k} = ${int(n * k * k)}.`,
