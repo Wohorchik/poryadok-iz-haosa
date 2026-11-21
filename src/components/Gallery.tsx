@@ -146,9 +146,6 @@ export function Gallery({
                   <span className="card-topic">{specs[item.id].topic}</span>
                   <span className="card-title">{item.title}</span>
                   <span className="card-copy">{item.hint}</span>
-                  <span className="card-arrow" aria-hidden="true">
-                    ↗
-                  </span>
                 </span>
               </button>
             </li>

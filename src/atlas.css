@@ -356,20 +356,12 @@ body {
   font-weight: 560;
   letter-spacing: -0.045em;
   line-height: 1.15;
-  padding-right: 22px;
 }
 .card-copy {
   max-width: 52ch;
   font-size: 14px;
   line-height: 1.5;
   color: #b4b4bd;
-}
-.card-arrow {
-  position: absolute;
-  right: 18px;
-  top: 32px;
-  font-size: 20px;
-  color: #b8b8c2;
 }
 .atlas-footer {
   display: flex;
@@ -652,8 +644,22 @@ body {
   border: 0;
   border-radius: 24px;
 }
-.atlas-card:hover {
+.atlas-card {
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+}
+.atlas-card:hover,
+.atlas-card:focus-visible {
   background: #222226;
+  box-shadow:
+    0 0 0 1px #8290ff,
+    0 12px 32px -12px rgba(130, 144, 255, 0.45);
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-card {
+    transition: none;
+  }
 }
 .atlas-card:active {
   transform: translateY(1px);
