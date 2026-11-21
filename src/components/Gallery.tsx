@@ -103,9 +103,6 @@ export function Gallery({
             <em>из хаоса</em>
           </h1>
           <p className="hero-summary">Семь интерактивных опытов о том, как из случайных событий рождаются закономерности.</p>
-          <button className="hero-action" type="button" onClick={() => onOpen('galton')}>
-            Начать эксперимент <span aria-hidden="true">↗</span>
-          </button>
         </div>
         <figure className="hero-figure">
           <div className="figure-top">
